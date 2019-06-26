@@ -5,6 +5,7 @@
   "main": "index.js",
   "bin": {
     "lcpkg": "./bin/cli",
+    "lcpkg-config": "./bin/cli-config",
     "lcpkg-install": "./bin/cli-install"
   },
   "scripts": {
@@ -15,8 +16,10 @@
   "dependencies": {
     "cli-progress": "^2.1.1",
     "commander": "^2.20.0",
+    "conf": "^5.0.0",
     "decompress": "^4.2.0",
     "download": "^7.1.0",
+    "fs-extra": "^8.0.1",
     "hasha": "^5.0.0",
     "iconv-lite": "^0.4.24",
     "progress-download": "^1.0.4",

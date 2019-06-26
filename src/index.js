@@ -1,7 +1,19 @@
 const fs = require('fs')
 const path = require('path')
+const Conf = require('conf')
 
-const CONFIG_FILE = 'vcpkg.config.js'
+const schema = {
+	vcpkg: {
+    type: 'object',
+    properties: {
+      root: {
+        type: 'string'
+      }
+    }
+	}
+}
+
+const CONFIG_FILE = 'lcpkg.config.json'
 
 function resolve() {
   let workdir = process.cwd()
@@ -21,8 +33,7 @@ function resolve() {
   throw new Error(`${CONFIG_FILE} file is not found`)
 }
 
-function load() {
-  const file = resolve()
+function load(file) {
   const ext = path.parse(file).ext
 
   if (ext === '.json') {
@@ -33,21 +44,47 @@ function load() {
   throw new Error(`${file}: invalid format`)
 }
 
-class Env {
+function mkdir(dirpath) {
+  if (fs.existsSync(dirpath)) {
+    return false
+  }
+  fs.mkdirSync(dirpath)
+  return true
+}
+
+class Environment {
   constructor(file) {
     this.file = file
     this.rootdir = path.dirname(file)
     this.workdir = path.join(this.rootdir, 'lcpkg')
     this.portsdir = path.join(this.workdir, 'ports')
     this.instaleddir = path.join(this.workdir, 'installed')
+    mkdir(this.workdir)
+    mkdir(this.portsdir)
+    mkdir(this.instaleddir)
   }
 }
 
-class Config {
+class LCPkg {
   constructor() {
-    this.env = new Env(resolve())
-    this.data = load()
+    this.cfg = new Conf({ projectName: 'lcpkg', schema })
+    this.env = null
+    this.pkg = null
+  }
+
+  load() {
+    const file = resolve()
+
+    this.env = new Environment(file)
+    this.pkg = load(file)
+  }
+
+  save() {
+    fs.writeFileSync(this.env.file, JSON.stringify(this.pkg, null, 2))
   }
 }
 
-module.exports = Config
+const lcpkg = new LCPkg()
+
+module.exports = lcpkg
+
