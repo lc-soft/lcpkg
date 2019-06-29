@@ -6,7 +6,7 @@ const { spawnSync } = require('child_process')
 const lcpkg = require('./index')
 
 function getTriplet() {
-  const triplet = ['x64']
+  const triplet = [program.arch]
 
   if (process.platform === 'win32') {
     triplet.push('windows')
@@ -17,7 +17,7 @@ function getTriplet() {
 }
 
 function getPackageTriplet(pkg) {
-  const triplet = ['x64']
+  const triplet = [program.arch]
 
   if (process.platform === 'win32') {
     triplet.push('windows')
@@ -105,7 +105,7 @@ function printVisualStudioUsage(libs) {
 
 function printGccUsage(libs) {
   const lflags = libs.map(lib => `-l${lib.startsWith('lib') ? lib.substr(3) : lib}`).join(' ')
-  const instdir = path.relative(path.dirname(lcpkg.env.file), path.join(lcpkg.env.installeddir, 'x64-linux'))
+  const instdir = path.relative(path.dirname(lcpkg.env.file), path.join(lcpkg.env.installeddir, `${program.arch}-linux`))
 
   console.log('Add cflags and ldflags to compile:\n')
   console.log(`    gcc -I ${path.join(instdir, 'include')} -c example.c`)
@@ -150,6 +150,13 @@ function run() {
 program
   .usage('[options] <pkg...>')
   .option('--static-link', 'link to static library')
+  .option('--arch <value>', 'specify which CPU architecture package to use', (arch, defaultArch) => {
+    if (['x86', 'x64', 'arm'].indexOf(arch) < 0) {
+      console.error(`invalid arch: ${arch}`)
+      return defaultArch
+    }
+    return arch
+  }, 'x86')
   .parse(process.argv)
 
 run()
