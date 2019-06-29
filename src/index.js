@@ -58,10 +58,10 @@ class Environment {
     this.rootdir = path.dirname(file)
     this.workdir = path.join(this.rootdir, 'lcpkg')
     this.portsdir = path.join(this.workdir, 'ports')
-    this.instaleddir = path.join(this.workdir, 'installed')
+    this.installeddir = path.join(this.workdir, 'installed')
     mkdir(this.workdir)
     mkdir(this.portsdir)
-    mkdir(this.instaleddir)
+    mkdir(this.installeddir)
   }
 }
 
@@ -87,4 +87,3 @@ class LCPkg {
 const lcpkg = new LCPkg()
 
 module.exports = lcpkg
-
