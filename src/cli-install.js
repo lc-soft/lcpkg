@@ -19,11 +19,22 @@ function getTriplet(pkg) {
   return triplet.join('-')
 }
 
-function install(packages) {
+function saveDependencies(packages) {
+  const dependencies = {}
+
+  packages.forEach((pkg) => {
+    const dep = Object.assign({}, pkg)
+
+    delete dep.name
+    dependencies[pkg.name] = dep
+  })
+  lcpkg.pkg.dependencies = dependencies
+  lcpkg.save()
+}
+
+function runVcpkgInstall(packages) {
   const vcpkgRoot = lcpkg.cfg.get('vcpkg.root')
-  const installeddir = path.relative(path.dirname(lcpkg.env.file), lcpkg.env.instaleddir)
   const file = path.join(vcpkgRoot, 'vcpkg')
-  const libs = []
   const params = [
     `--overlay-ports=${lcpkg.env.portsdir}`,
     '--vcpkg-root',
@@ -36,6 +47,12 @@ function install(packages) {
   console.log(file, ...params, '\n')
   spawnSync(file, params, { stdio: 'inherit' })
   console.log(chalk.blue('==== vcpkg call end ====\n'))
+}
+
+function collectInstalledPackages(packages) {
+  const libs = []
+  const vcpkgRoot = lcpkg.cfg.get('vcpkg.root')
+
   packages.forEach((pkg) => {
     const triplet = getTriplet(pkg)
     const dest = path.resolve(lcpkg.env.instaleddir, triplet)
@@ -57,15 +74,32 @@ function install(packages) {
       }
       return false
     })
-    console.log(`${chalk.green('collect:')} ${src}`)
+    console.log(`${chalk.green('Collect:')} ${src}`)
     fs.copySync(src, dest, { dereference: true })
   })
+  return libs
+}
 
+function install(packages) {
+  saveDependencies(packages)
+  runVcpkgInstall(packages)
+
+  const libs = collectInstalledPackages(packages)
   const lflags = libs.map(lib => `-l${lib}`).join(' ')
+  const installeddir = path.relative(path.dirname(lcpkg.env.file), lcpkg.env.instaleddir)
 
-  console.log('\nusage:\n')
+  console.log('\nPackages have been installed, if you are not using CMake, you can use these packages in the following ways:\n')
+
+  console.log(chalk.bold('1. Configure project properties in the Visual Studio:\n'))
+  console.log(`C/C++ -> Additional Include Directoreis: ${path.join(installeddir, 'include')}`)
+  console.log(`Linker -> General -> Additinal Library Directories: ${path.join(installeddir, 'lib')}`)
+  console.log(`Linker -> Input -> Additinal Dependencies: ${libs.join(';')};`)
+
+  console.log(chalk.bold('\n2. Using gcc to compile:\n'))
   console.log(`gcc -I ${path.join(installeddir, 'include')} -c example.c`)
   console.log(`gcc -L ${path.join(installeddir, 'lib')} ${lflags} -o example example.o`)
+
+  console.log(chalk.bold('\n3. Refer to the methods above to configure your build tools'))
 }
 
 function run() {
@@ -73,12 +107,12 @@ function run() {
 
   lcpkg.load()
   if (packages.length < 1) {
-    packages = lcpkg.pkg.dependencies
+    packages = lcpkg.pkg.dependencies || []
     packages = Object.keys(packages).map(name => Object.assign({ name }, packages[name]))
   } else {
     packages = packages.map((name) => Object.assign({
       name,
-      target: program.staticLink ? 'static' : 'auto'
+      linkage: program.staticLink ? 'static' : 'auto'
     }))
   }
   install(packages)
