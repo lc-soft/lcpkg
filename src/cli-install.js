@@ -131,18 +131,24 @@ function install(packages) {
   console.log('Refer to the methods above to configure your build tools.\n')
 }
 
-function run() {
-  let packages = program.args
-
+function loadDepenecies() {
   lcpkg.load()
-  if (packages.length < 1) {
-    packages = lcpkg.pkg.dependencies || []
-    packages = Object.keys(packages).map(name => Object.assign({ name }, packages[name]))
-  } else {
-    packages = packages.map((name) => Object.assign({
+
+  const deps = lcpkg.pkg.dependencies || []
+
+  return Object.keys(deps).map(name => Object.assign({ name }, deps[name]))
+}
+
+function run() {
+
+  const dependencies = loadDepenecies()
+  let packages = dependencies
+
+  if (program.args.length > 0) {
+    packages = program.args.map((name) => Object.assign({
       name,
       linkage: program.staticLink ? 'static' : 'auto'
-    }))
+    })).concat(dependencies)
   }
   install(packages)
 }
@@ -150,7 +156,7 @@ function run() {
 program
   .usage('[options] <pkg...>')
   .option('--static-link', 'link to static library')
-  .option('--arch <value>', 'specify which CPU architecture package to use', (arch, defaultArch) => {
+  .option('--arch <arch>', 'specify which CPU architecture package to use', (arch, defaultArch) => {
     if (['x86', 'x64', 'arm'].indexOf(arch) < 0) {
       console.error(`invalid arch: ${arch}`)
       return defaultArch
