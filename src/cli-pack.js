@@ -23,7 +23,10 @@ class PackEntry {
 
   replaceVaribales(str) {
     return ['arch', 'platform', 'mode'].reduce((input, key) => {
-      return input.replace(`\${${key}}`, this.env[key])
+      if (this.env[key]) {
+        return input.replace(`\${${key}}`, this.env[key])
+      }
+      return input
     }, str)
   }
 
@@ -66,7 +69,9 @@ class PackEntry {
         return
       }
       if (this.testFile(srcPath)) {
-        console.log(`Create: ${destPath}`)
+        if (program.verbose) {
+          console.log(`copy: ${path.relative(lcpkg.env.rootdir, srcPath)} -> ${destPath}`)
+        }
         fs.copyFileSync(srcPath, destPath)
       }
     })
@@ -76,18 +81,14 @@ class PackEntry {
     let input = this.input
     let output = this.env.targetdir
 
-    if (devItems.includes(this.name)) {
-      output = path.join(output, this.triplet)
-      if (this.env.mode === 'debug') {
-        if (this.name === 'include') {
-          return
-        }
-        output = path.join(output, this.env.mode, this.name)
-      } else {
-        output = path.join(output, this.name)
+    output = path.join(output, this.triplet)
+    if (devItems.includes(this.name) && this.env.mode === 'debug') {
+      if (this.name === 'include') {
+        return
       }
+      output = path.join(output, this.env.mode, this.name)
     } else {
-      output = path.join(output, 'data')
+      output = path.join(output, this.name)
     }
     this.copyFiles(input, output)
   }
@@ -98,52 +99,45 @@ class Packer {
     lcpkg.load()
     this.target = `${lcpkg.pkg.name}-${lcpkg.pkg.version}`
     this.output = lcpkg.pkg.package.output || path.join(lcpkg.env.workdir, 'dist')
-    this.zipfile = path.join(this.output, `${this.target}.zip`)
   }
 
   run() {
     const config = lcpkg.pkg.package
     const targetdir = path.join(this.output, this.target)
 
-    console.log(`build package: ${this.zipfile}`)
     if (!fs.existsSync(targetdir)) {
       fs.mkdirSync(targetdir, { recursive: true })
     }
-    Object.keys(config.entry).forEach((name) => {
-      const entry = config.entry[name]
-
-      if (!devItems.includes(name)) {
-        new PackEntry(name, entry, { targetdir, arch, platform, mode }).build()
-        return
-      }
+    config.arch.forEach((arch) => {
       config.platform.forEach((platform) => {
-        config.arch.forEach((arch) => {
+        Object.keys(config.entry).forEach((name) => {
           config.mode.forEach((mode) => {
-            new PackEntry(name, entry, { targetdir, arch, platform, mode }).build()
+            new PackEntry(name, config.entry[name], { targetdir, arch, platform, mode }).build()
           })
         })
+        this.pack(arch, platform)
       })
     })
-    this.pack()
   }
 
-  pack() {
-    const output = fs.createWriteStream(this.zipfile)
+  pack(arch, platform) {
+    const triplet = `${arch}-${platform}`
+    const zipfile = path.join(this.output, `${this.target}_${triplet}.zip`)
+    const output = fs.createWriteStream(zipfile)
     const archive = archiver('zip')
 
-    console.log(`create: ${this.zipfile}`)
+    console.log(`create: ${zipfile}`)
     archive.pipe(output)
     archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
-    archive.directory(path.join(this.output, this.target), false)
+    archive.directory(path.join(this.output, this.target, triplet), false)
     archive.finalize()
   }
 }
 
-console.log('aaa')
 program
   .usage('create a zipball from a package')
+  .option('-v, --verbose', 'enable verbose output', false)
   .action(() => {
-    console.log('pack')
-    new Packer().run()
+    new Packer({ verbose: program.verbose }).run()
   })
   .parse(process.argv)
