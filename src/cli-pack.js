@@ -21,6 +21,28 @@ class PackEntry {
     return `${this.env.arch}-${this.env.platform}`
   }
 
+  get extensions() {
+    if (this.data.extensions instanceof Array) {
+      return this.data.extensions
+    }
+    if (this.name === 'lib') {
+      if (process.platform === 'win32') {
+        return ['.lib']
+      }
+      return ['.a']
+    }
+    if (this.name === 'bin') {
+      if (process.platform === 'win32') {
+        return ['.dll', '.pdb']
+      }
+      return ['.so']
+    }
+    if (this.name === 'include') {
+      return ['.h']
+    }
+    return []
+  }
+
   replaceVaribales(str) {
     return ['arch', 'platform', 'mode'].reduce((input, key) => {
       if (this.env[key]) {
@@ -31,28 +53,15 @@ class PackEntry {
   }
 
   testFile(file) {
-    let extensions = []
-    const ext = path.extname(file)
+    const info = path.parse(file)
 
-    if (this.name === 'lib') {
-      if (process.platform === 'win32') {
-        extensions = ['.lib']
-      } else {
-        extensions = ['.a']
-      }
-    } else if (this.name === 'bin') {
-      if (process.platform === 'win32') {
-        extensions = ['.dll', '.pdb']
-      } else {
-        extensions = ['.so']
-      }
-    } else if (this.name === 'include') {
-      extensions = ['.h']
+    if (
+      this.data.targets instanceof Array
+      && !this.data.targets.includes(info.name)
+    ) {
+      return false
     }
-    if (this.data.extensions instanceof Array) {
-      extensions = this.data.extensions
-    }
-    return extensions.includes(ext)
+    return this.extensions.includes(info.ext)
   }
 
   copyFiles(input, output) {
