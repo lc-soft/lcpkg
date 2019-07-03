@@ -180,7 +180,4 @@ async function run() {
   fs.writeFileSync(file, content)
 }
 
-program
-  .usage('create a lcpkg.json file')
-  .action(run)
-  .parse(process.argv)
+program.action(run).parse(process.argv)

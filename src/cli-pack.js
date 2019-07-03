@@ -144,7 +144,7 @@ class Packer {
 }
 
 program
-  .usage('create a zipball from a package')
+  .usage('[options]')
   .option('-v, --verbose', 'enable verbose output', false)
   .action(() => {
     new Packer({ verbose: program.verbose }).run()
