@@ -6,7 +6,9 @@
   "bin": {
     "lcpkg": "./bin/cli",
     "lcpkg-config": "./bin/cli-config",
-    "lcpkg-install": "./bin/cli-install"
+    "lcpkg-install": "./bin/cli-install",
+    "lcpkg-pack": "./bin/cli-pack",
+    "lcpkg-init": "./bin/cli-init"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,6 +23,8 @@
     "decompress": "^4.2.0",
     "download": "^7.1.0",
     "fs-extra": "^8.0.1",
+    "git-user-email": "^0.2.2",
+    "git-user-name": "^2.0.0",
     "hasha": "^5.0.0",
     "iconv-lite": "^0.4.24",
     "progress-download": "^1.0.4",
