@@ -57,6 +57,8 @@ class Environment {
     this.rootdir = path.dirname(file)
     this.workdir = path.join(this.rootdir, 'lcpkg')
     this.portsdir = path.join(this.workdir, 'ports')
+    this.packagesdir = path.join(this.workdir, 'packages')
+    this.downloadsdir = path.join(this.workdir, 'downloads')
     this.installeddir = path.join(this.workdir, 'installed')
     mkdir(this.workdir)
     mkdir(this.portsdir)
@@ -69,6 +71,16 @@ class LCPkg {
     this.cfg = new Conf({ projectName: 'lcpkg', schema })
     this.env = null
     this.pkg = null
+    this.arch = 'x86'
+    this.platform = process.platform === 'win32' ? 'windows' : process.platform
+  }
+
+  get triplet() {
+    return `${this.arch}-${this.platform}`
+  }
+
+  setup(program) {
+    this.arch = program.arch
   }
 
   load() {

@@ -3,31 +3,16 @@ const fs = require('fs-extra')
 const chalk = require('chalk')
 const program = require('commander')
 const { spawnSync } = require('child_process')
+const download = require('./download')
+const github = require('./github')
+const local = require('./local')
 const lcpkg = require('./index')
 
-function getTriplet() {
-  const triplet = [program.arch]
-
-  if (process.platform === 'win32') {
-    triplet.push('windows')
-  } else {
-    triplet.push(process.platform)
-  }
-  return triplet.join('-')
-}
-
 function getPackageTriplet(pkg) {
-  const triplet = [program.arch]
-
-  if (process.platform === 'win32') {
-    triplet.push('windows')
-    if (pkg.linkage === 'static') {
-      triplet.push('static')
-    }
-  } else {
-    triplet.push(process.platform)
+  if (lcpkg.platform === 'windows' && pkg.linkage === 'static') {
+    return `${lcpkg.triplet}-static`
   }
-  return triplet.join('-')
+  return lcpkg.triplet
 }
 
 function saveDependencies(packages) {
@@ -43,7 +28,7 @@ function saveDependencies(packages) {
   lcpkg.save()
 }
 
-function runVcpkgInstall(packages) {
+function runVcpkgInstaller(packages) {
   const vcpkgRoot = lcpkg.cfg.get('vcpkg.root')
 
   if (!vcpkgRoot) {
@@ -58,7 +43,7 @@ function runVcpkgInstall(packages) {
     '--vcpkg-root',
     vcpkgRoot,
     'install',
-    ...packages.map((pkg) => `${pkg.name}:${getPackageTriplet(pkg)}`)
+    ...packages.map((pkg) => `${pkg.name}:${pkg.triplet}`)
   ]
 
   console.log(chalk.blue('==== vcpkg call begin ===='))
@@ -72,23 +57,27 @@ function collectInstalledPackages(packages) {
   const vcpkgRoot = lcpkg.cfg.get('vcpkg.root')
 
   packages.forEach((pkg) => {
-    const triplet = getPackageTriplet(pkg)
-    const dest = path.resolve(lcpkg.env.installeddir, getTriplet())
-    const src = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${triplet}`)
+    let src
+    const dest = path.resolve(lcpkg.env.installeddir, lcpkg.triplet)
 
+    if (pkg.uri.startsWith('vcpkg:')) {
+      src = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${pkg.triplet}`)
+    } else {
+      src = path.resolve(lcpkg.env.packagesdir, pkg.name, pkg.version, pkg.triplet)
+    }
     if (!fs.existsSync(dest)) {
       fs.mkdirSync(dest)
     }
     fs.readdirSync(path.join(src, 'lib')).some((item) => {
       const info = path.parse(item)
 
-      if (['.a', '.lib'].indexOf(info.ext) >= 0) {
+      if (['.a', '.lib'].includes(info.ext)) {
         libs.push(info.name)
         return true
       }
       return false
     })
-    console.log(`${chalk.green('Collect:')} ${src}`)
+    console.log(`${chalk.green('collect ')} ${src}`)
     fs.copySync(src, dest, { dereference: true })
   })
   return libs
@@ -112,12 +101,7 @@ function printGccUsage(libs) {
   console.log(`    gcc -L ${path.join(instdir, 'lib')} ${lflags} -o example example.o`)
 }
 
-function install(packages) {
-  saveDependencies(packages)
-  runVcpkgInstall(packages)
-
-  const libs = collectInstalledPackages(packages)
-
+function printPackageUsage(libs) {
   console.log(chalk.green.bold(`\nPackages have been installed!\n`))
   console.log('If you are not using CMake, please try the following methods:')
 
@@ -131,6 +115,32 @@ function install(packages) {
   console.log('Refer to the methods above to configure your build tools.\n')
 }
 
+async function install(packages) {
+  const vcpkgPackages = []
+  const downloadPackages = []
+  const installedPackages = packages.map((pkg) => {
+    const info = Object.assign({}, pkg, { triplet: getPackageTriplet(pkg) })
+
+    if (pkg.uri.startsWith('vcpkg:')) {
+      vcpkgPackages.push(info)
+    } else {
+      downloadPackages.push(info)
+    }
+    return info
+  })
+  saveDependencies(packages)
+  if (downloadPackages.length > 0) {
+    await download(downloadPackages)
+  }
+  if (vcpkgPackages.length > 0) {
+    runVcpkgInstaller(vcpkgPackages)
+  }
+
+  const libs = collectInstalledPackages(installedPackages)
+
+  printPackageUsage(libs)
+}
+
 function loadDepenecies() {
   lcpkg.load()
 
@@ -139,18 +149,48 @@ function loadDepenecies() {
   return Object.keys(deps).map(name => Object.assign({ name }, deps[name]))
 }
 
-function run() {
-
-  const dependencies = loadDepenecies()
-  let packages = dependencies
-
-  if (program.args.length > 0) {
-    packages = program.args.map((name) => Object.assign({
-      name,
-      linkage: program.staticLink ? 'static' : 'auto'
-    })).concat(dependencies)
+async function resolvePackage(url, info) {
+  if (github.validate(url)) {
+    return await github.resolve(url, info)
   }
-  install(packages)
+  if (local.validate(url)) {
+    return await local.resolve(url, info)
+  }
+  return { name: url, version: 'latest', uri: `vcpkg:${url}` }
+}
+
+async function run(args) {
+  const dict = {}
+  const dependencies = loadDepenecies()
+  const info = {
+    linkage: program.staticLink ? 'static' : 'auto',
+    platform: lcpkg.platform,
+    arch: lcpkg.arch
+  }
+  let packages = []
+
+  if (args.length < 1) {
+    await install(dependencies)
+    return
+  }
+  try {
+    packages = await Promise.all(args.map(arg => resolvePackage(arg, info)))
+  } catch (err) {
+    console.error(err)
+    return
+  }
+  await install(packages
+    .filter((pkg) => {
+      if (dict[pkg.name]) {
+        return false
+      }
+      dict[pkg.name] = true
+      return true
+    })
+    .map(pkg => Object.assign({}, pkg, {
+      linkage: program.staticLink ? 'static' : 'auto'
+    }))
+    .concat(dependencies.filter(pkg => !dict[pkg.name])))
 }
 
 program
@@ -163,6 +203,8 @@ program
     }
     return arch
   }, 'x86')
+  .action(() => {
+    lcpkg.setup(program)
+    run(program.args.filter(arg => typeof arg === 'string'))
+  })
   .parse(process.argv)
-
-run()
