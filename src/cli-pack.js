@@ -3,6 +3,7 @@ const path = require('path')
 const program = require('commander')
 const archiver = require('archiver')
 const lcpkg = require('./index')
+const config = require('./config')
 
 const devItems = ['include', 'lib', 'bin']
 
@@ -131,7 +132,7 @@ class Packer {
 
   pack(arch, platform) {
     const triplet = `${arch}-${platform}`
-    const zipfile = path.join(this.output, `${this.target}_${triplet}.zip`)
+    const zipfile = path.join(this.output, `${this.target}_${triplet}${config.packageFileExt}`)
     const output = fs.createWriteStream(zipfile)
     const archive = archiver('zip')
 

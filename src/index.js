@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const Conf = require('conf')
+const config = require('./config')
 
 const schema = {
 	vcpkg: {
@@ -13,14 +14,12 @@ const schema = {
 	}
 }
 
-const CONFIG_FILE = 'lcpkg.config.json'
-
 function resolve() {
   let workdir = process.cwd()
 
   do {
     const info = path.parse(workdir)
-    const file = path.join(workdir, CONFIG_FILE)
+    const file = path.join(workdir, config.configFileName)
 
     if (fs.existsSync(file)) {
       return file
@@ -30,7 +29,7 @@ function resolve() {
     }
     workdir = info.dir
   } while (1)
-  throw new Error(`${CONFIG_FILE} file is not found`)
+  throw new Error(`${config.configFileName} file is not found`)
 }
 
 function load(file) {
