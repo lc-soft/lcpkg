@@ -111,36 +111,66 @@ class Packer {
     this.output = lcpkg.pkg.package.output || path.join(lcpkg.env.workdir, 'dist')
   }
 
-  run() {
-    const config = lcpkg.pkg.package
+  async run() {
+    const pkg = lcpkg.pkg.package
     const targetdir = path.join(this.output, this.target)
+    const tasks = []
 
     if (!fs.existsSync(targetdir)) {
       fs.mkdirSync(targetdir, { recursive: true })
     }
-    config.arch.forEach((arch) => {
-      config.platform.forEach((platform) => {
-        Object.keys(config.entry).forEach((name) => {
-          config.mode.forEach((mode) => {
-            new PackEntry(name, config.entry[name], { targetdir, arch, platform, mode }).build()
+    pkg.arch.forEach((arch) => {
+      pkg.platform.forEach((platform) => {
+        Object.keys(pkg.entry).forEach((name) => {
+          pkg.mode.forEach((mode) => {
+            new PackEntry(name, pkg.entry[name], { targetdir, arch, platform, mode }).build()
           })
         })
-        this.pack(arch, platform)
+        tasks.push(this.pack.bind(this, arch, platform))
       })
     })
+    tasks.push(this.packAll.bind(this))
+    do {
+      const task = tasks.shift()
+
+      if (!task) {
+        break
+      }
+      await task()
+    } while (1)
   }
 
   pack(arch, platform) {
+    const archive = archiver('zip')
     const triplet = `${arch}-${platform}`
     const zipfile = path.join(this.output, `${this.target}_${triplet}${config.packageFileExt}`)
     const output = fs.createWriteStream(zipfile)
-    const archive = archiver('zip')
 
-    console.log(`create: ${zipfile}`)
-    archive.pipe(output)
-    archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
-    archive.directory(path.join(this.output, this.target, triplet), false)
-    archive.finalize()
+    return new Promise((resolve, reject) => {
+      console.log(`create: ${zipfile}`)
+      output.on('close', resolve)
+      archive.on('error', reject)
+      archive.pipe(output)
+      archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
+      archive.directory(path.join(this.output, this.target, triplet), triplet)
+      archive.finalize()
+    })
+  }
+
+  packAll() {
+    const archive = archiver('zip')
+    const zipfile = path.join(this.output, `${this.target}_all${config.packageFileExt}`)
+    const output = fs.createWriteStream(zipfile)
+
+    return new Promise((resolve, reject) => {
+      console.log(`create: ${zipfile}`)
+      output.on('close', resolve)
+      archive.on('error', reject)
+      archive.pipe(output)
+      archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
+      archive.directory(path.join(this.output, this.target), false)
+      archive.finalize()
+    })
   }
 }
 
