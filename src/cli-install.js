@@ -49,8 +49,9 @@ function runVcpkgInstaller(packages) {
 
   console.log(chalk.blue('==== vcpkg call begin ===='))
   console.log(file, ...params, '\n')
-  spawnSync(file, params, { stdio: 'inherit' })
+  const result = spawnSync(file, params, { stdio: 'inherit' })
   console.log(chalk.blue('==== vcpkg call end ====\n'))
+  return result.status
 }
 
 function collectInstalledPackages(packages) {
@@ -119,18 +120,21 @@ async function install(packages) {
     }
     return info
   })
-  saveDependencies(packages)
+  if (vcpkgPackages.length > 0) {
+    if (runVcpkgInstaller(vcpkgPackages) !== 0) {
+      console.error('vcpkg is not working correctly, installation has been terminated.')
+      return
+    }
+  }
   if (downloadPackages.length > 0) {
     await download(downloadPackages)
   }
-  if (vcpkgPackages.length > 0) {
-    runVcpkgInstaller(vcpkgPackages)
-  }
+  saveDependencies(packages)
 
   const libs = collectInstalledPackages(installedPackages)
   const file = writePackageUsage(libs)
 
-  console.log(chalk.green('\npackages are insalled!\n'))
+  console.log(chalk.green('\nall packages are already installed!\n'))
   console.log(`to find out how to use them, please see: ${file}`)
 }
 
