@@ -11,7 +11,7 @@ class PackEntry {
   constructor(name, data, env) {
     this.env = env
     this.name = name
-    this.data = data
+    this.data = typeof data  === 'string' ? { input: data } : data
   }
 
   get input() {
@@ -112,18 +112,18 @@ class Packer {
   }
 
   async run() {
-    const pkg = lcpkg.pkg.package
+    const info = lcpkg.pkg
     const targetdir = path.join(this.output, this.target)
     const tasks = []
 
     if (!fs.existsSync(targetdir)) {
       fs.mkdirSync(targetdir, { recursive: true })
     }
-    pkg.arch.forEach((arch) => {
-      pkg.platform.forEach((platform) => {
-        Object.keys(pkg.entry).forEach((name) => {
-          pkg.mode.forEach((mode) => {
-            new PackEntry(name, pkg.entry[name], { targetdir, arch, platform, mode }).build()
+    info.arch.forEach((arch) => {
+      info.platform.forEach((platform) => {
+        Object.keys(info.package.entry).forEach((name) => {
+          info.mode.forEach((mode) => {
+            new PackEntry(name, info.package.entry[name], { targetdir, arch, platform, mode }).build()
           })
         })
         tasks.push(this.pack.bind(this, arch, platform))

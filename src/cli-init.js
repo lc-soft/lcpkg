@@ -87,6 +87,8 @@ async function run() {
       ]
     }
   ])
+  config.mode = ['debug', 'release']
+
   let result = await prompts({
     name: 'pack',
     type: 'confirm',
