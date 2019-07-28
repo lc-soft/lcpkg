@@ -3,6 +3,7 @@ const fs = require('fs-extra')
 const chalk = require('chalk')
 const program = require('commander')
 const { spawnSync } = require('child_process')
+const { renderString } = require('template-file')
 const download = require('./download')
 const github = require('./github')
 const local = require('./local')
@@ -83,36 +84,26 @@ function collectInstalledPackages(packages) {
   return libs
 }
 
-function printVisualStudioUsage(libs) {
-  const instdir = path.relative(path.dirname(lcpkg.env.file), path.join(lcpkg.env.installeddir, '$(PlatformTarget)-windows'))
-
-  console.log('Edit project properties and find the following configuration items:\n')
-  console.log(`    ${chalk.bold('C/C++ -> Additional Include Directories:')} ${path.join(instdir, 'include')}`)
-  console.log(`    ${chalk.bold('Linker -> General -> Additinal Library Directories:')} ${path.join(instdir, 'lib')}`)
-  console.log(`    ${chalk.bold('Linker -> Input -> Additinal Dependencies:')} ${libs.join(';')};`)
-}
-
-function printGccUsage(libs) {
-  const lflags = libs.map(lib => `-l${lib.startsWith('lib') ? lib.substr(3) : lib}`).join(' ')
-  const instdir = path.relative(path.dirname(lcpkg.env.file), path.join(lcpkg.env.installeddir, `${program.arch}-linux`))
-
-  console.log('Add cflags and ldflags to compile:\n')
-  console.log(`    gcc -I ${path.join(instdir, 'include')} -c example.c`)
-  console.log(`    gcc -L ${path.join(instdir, 'lib')} ${lflags} -o example example.o`)
-}
-
-function printPackageUsage(libs) {
-  console.log(chalk.green.bold(`\nPackages have been installed!\n`))
-  console.log('If you are not using CMake, please try the following methods:')
-
-  console.log(chalk.bold('\n1. Visual Studio\n'))
-  printVisualStudioUsage(libs)
-
-  console.log(chalk.bold('\n2. GCC Compiler\n'))
-  printGccUsage(libs)
-
-  console.log(chalk.bold('\n3. Others\n'))
-  console.log('Refer to the methods above to configure your build tools.\n')
+function writePackageUsage(libs) {
+  const infile = path.join(__dirname, 'USAGE.md')
+  const outfile = path.join(lcpkg.env.workdir, 'USAGE.md')
+  const instdir = path.relative(lcpkg.env.rootdir, lcpkg.env.installeddir)
+  const linuxInstdir = path.join(instdir, `${program.arch}-linux`)
+  const winInstdir = path.join(instdir, '$(PlatformTarget)-windows')
+  const ldflags = libs.map(lib => `-l${lib.startsWith('lib') ? lib.substr(3) : lib}`).join(' ')
+  const usage = {
+    vs: {
+      includedir: path.join(winInstdir, 'include'),
+      libdir: path.join(winInstdir, 'lib'),
+      libs: libs.join(';')
+    },
+    gcc: {
+      cflags: `-I ${path.join(linuxInstdir, 'include')}`,
+      ldflags: `-L ${path.join(linuxInstdir, 'lib')} ${ldflags}`
+    }
+  }
+  fs.writeFileSync(outfile, renderString(fs.readFileSync(infile, { encoding: 'utf-8' }), usage))
+  return outfile
 }
 
 async function install(packages) {
@@ -137,8 +128,10 @@ async function install(packages) {
   }
 
   const libs = collectInstalledPackages(installedPackages)
+  const file = writePackageUsage(libs)
 
-  printPackageUsage(libs)
+  console.log(chalk.green('\npackages are insalled!\n'))
+  console.log(`to find out how to use them, please see: ${file}`)
 }
 
 function loadDepenecies() {

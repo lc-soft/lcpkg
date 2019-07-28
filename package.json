@@ -31,6 +31,7 @@
     "progress-download": "^1.0.4",
     "prompts": "^2.1.0",
     "request": "^2.88.0",
-    "request-progress": "^3.0.0"
+    "request-progress": "^3.0.0",
+    "template-file": "^3.1.0"
   }
 }
