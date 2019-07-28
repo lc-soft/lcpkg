@@ -10,6 +10,21 @@
             "name": "test install",
             "program": "${workspaceFolder}/bin/cli-install",
             "args": ["--static-link", "freetype", "libxml2-lite"]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test pack",
+            "program": "${workspaceFolder}/bin/cli-pack",
+            "cwd":"${workspaceFolder}/../LCUI"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "test local install",
+            "program": "${workspaceFolder}/bin/cli-install",
+            "args": ["../LCUI/dist/lcui-1.3.0_all.lcpkg.zip"]
+            "cwd":"${workspaceFolder}/../test-lcpkg"
         }
     ]
 }
