@@ -57,15 +57,23 @@ function runVcpkgInstaller(packages) {
 function collectInstalledPackages(packages) {
   const libs = []
   const vcpkgRoot = lcpkg.cfg.get('vcpkg.root')
+  const dest = path.join(lcpkg.env.installeddir, lcpkg.triplet)
+  const contentDest = path.join(lcpkg.env.installeddir, 'content')
 
+  if (!fs.existsSync(contentDest)) {
+    fs.mkdirSync(contentDest)
+  }
   packages.forEach((pkg) => {
     let src
-    const dest = path.resolve(lcpkg.env.installeddir, lcpkg.triplet)
+    let contentSrc = null
 
     if (pkg.uri.startsWith('vcpkg:')) {
       src = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${pkg.triplet}`)
     } else {
-      src = path.resolve(lcpkg.env.packagesdir, pkg.name, pkg.version, pkg.triplet)
+      const pkgDir = path.resolve(lcpkg.env.packagesdir, pkg.name, pkg.version)
+
+      src = path.join(pkgDir, pkg.triplet)
+      contentSrc = path.join(pkgDir, 'content')
     }
     if (!fs.existsSync(dest)) {
       fs.mkdirSync(dest)
@@ -79,9 +87,15 @@ function collectInstalledPackages(packages) {
       }
       return false
     })
-    console.log(`${chalk.green('collect ')} ${src}`)
+    console.log(`${chalk.green('collect')} ${src}`)
     fs.copySync(src, dest, { dereference: true })
+    if (contentSrc) {
+      fs.copySync(contentSrc, contentDest, { dereference: true })
+      console.log(`${chalk.green('collect')} ${contentSrc}`)
+    }
   })
+  console.log(`${chalk.green('collect')} ${lcpkg.env.rootdir}`)
+  fs.copySync(contentDest, lcpkg.env.rootdir, { dereference: true })
   return libs
 }
 
@@ -199,7 +213,7 @@ program
       return defaultArch
     }
     return arch
-  }, 'x86')
+  }, process.platform === 'win32' ? 'x86' : 'x64')
   .action(() => {
     lcpkg.setup(program)
     run(program.args.filter(arg => typeof arg === 'string'))

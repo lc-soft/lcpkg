@@ -12,6 +12,11 @@ class PackEntry {
     this.env = env
     this.name = name
     this.data = typeof data  === 'string' ? { input: data } : data
+    if (name === 'include' || name === 'content') {
+      if (typeof this.data.recursive === 'undefined') {
+        this.data.recursive = true
+      }
+    }
   }
 
   get input() {
@@ -62,12 +67,18 @@ class PackEntry {
     ) {
       return false
     }
+    if (this.extensions.length < 1) {
+      return true
+    }
     return this.extensions.includes(info.ext)
   }
 
   copyFiles(input, output) {
     if (!fs.existsSync(output)) {
       fs.mkdirSync(output, { recursive: true })
+    }
+    if (!fs.existsSync(input)) {
+      return
     }
     fs.readdirSync(input).forEach((file) => {
       const srcPath = path.join(input, file)
@@ -80,7 +91,7 @@ class PackEntry {
       }
       if (this.testFile(srcPath)) {
         if (program.verbose) {
-          console.log(`copy: ${path.relative(lcpkg.env.rootdir, srcPath)} -> ${destPath}`)
+          console.log(`copy ${path.relative(lcpkg.env.rootdir, srcPath)} -> ${destPath}`)
         }
         fs.copyFileSync(srcPath, destPath)
       }
@@ -91,12 +102,16 @@ class PackEntry {
     let input = this.input
     let output = this.env.targetdir
 
-    output = path.join(output, this.triplet)
-    if (devItems.includes(this.name) && this.env.mode === 'debug') {
-      if (this.name === 'include') {
-        return
+    if (devItems.includes(this.name)) {
+      output = path.join(output, this.triplet)
+      if (this.env.mode === 'debug') {
+        if (this.name === 'include') {
+          return
+        }
+        output = path.join(output, this.env.mode, this.name)
+      } else {
+        output = path.join(output, this.name)
       }
-      output = path.join(output, this.env.mode, this.name)
     } else {
       output = path.join(output, this.name)
     }
@@ -119,9 +134,15 @@ class Packer {
     if (!fs.existsSync(targetdir)) {
       fs.mkdirSync(targetdir, { recursive: true })
     }
+    if (info.package.entry.content) {
+      new PackEntry('content', info.package.entry.content, { targetdir }).build()
+    }
     info.arch.forEach((arch) => {
       info.platform.forEach((platform) => {
         Object.keys(info.package.entry).forEach((name) => {
+          if (name === 'content') {
+            return
+          }
           info.mode.forEach((mode) => {
             new PackEntry(name, info.package.entry[name], { targetdir, arch, platform, mode }).build()
           })
@@ -145,6 +166,7 @@ class Packer {
     const triplet = `${arch}-${platform}`
     const zipfile = path.join(this.output, `${this.target}_${triplet}${config.packageFileExt}`)
     const output = fs.createWriteStream(zipfile)
+    const contentPath = path.join(this.output, this.target, 'content')
 
     return new Promise((resolve, reject) => {
       console.log(`create: ${zipfile}`)
@@ -153,6 +175,9 @@ class Packer {
       archive.pipe(output)
       archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
       archive.directory(path.join(this.output, this.target, triplet), triplet)
+      if (fs.existsSync(contentPath)) {
+        archive.directory(contentPath, 'content')
+      }
       archive.finalize()
     })
   }
