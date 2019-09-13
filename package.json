@@ -8,6 +8,7 @@
     "lcpkg-config": "./bin/cli-config",
     "lcpkg-install": "./bin/cli-install",
     "lcpkg-pack": "./bin/cli-pack",
+    "lcpkg-setup": "./bin/cli-setup",
     "lcpkg-run-script": "./bin/cli-run-script",
     "lcpkg-init": "./bin/cli-init"
   },
