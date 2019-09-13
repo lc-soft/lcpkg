@@ -148,7 +148,7 @@ async function install(packages) {
   const libs = collectInstalledPackages(installedPackages)
   const file = writePackageUsage(libs)
 
-  console.log(chalk.green('\nall packages are already installed!\n'))
+  console.log(chalk.green('\npackages are installed!\n'))
   console.log(`to find out how to use them, please see: ${file}`)
 }
 
