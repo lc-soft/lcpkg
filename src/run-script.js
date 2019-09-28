@@ -7,8 +7,12 @@ function runScript(name) {
     console.error(`missing script: ${name}`)
     return  
   }
-  console.log(lcpkg.pkg.scripts[name])
-  execSync(lcpkg.pkg.scripts[name], { stdio: 'inherit' })
+
+  const script = lcpkg.pkg.scripts[name]
+  const params = process.argv.slice(3).join(' ')
+
+  console.log(script, params)
+  execSync(`${script} ${params}`, { stdio: 'inherit' })
 }
 
 module.exports = {
