@@ -89,12 +89,12 @@ function collectInstalledPackages(packages) {
     })
     console.log(`${chalk.green('collect')} ${src}`)
     fs.copySync(src, dest, { dereference: true })
-    if (contentSrc) {
+    if (contentSrc && fs.existsSync(contentSrc)) {
       fs.copySync(contentSrc, contentDest, { dereference: true })
       console.log(`${chalk.green('collect')} ${contentSrc}`)
     }
   })
-  console.log(`${chalk.green('collect')} ${lcpkg.env.rootdir}`)
+  console.log(`${chalk.green('collect')} ${contentDest}`)
   fs.copySync(contentDest, lcpkg.env.rootdir, { dereference: true })
   return libs
 }
