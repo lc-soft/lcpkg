@@ -25,12 +25,11 @@ async function run() {
     author: userName ? `${userName}${userEmail ? `<${userEmail}>` : ''}` : '',
     arch: [],
     package: {
-      output: 'dist',
+      output: 'lcpkg/dist',
       entry: {
         include: 'include',
         lib: 'build/${arch}-${platform}/${mode}',
         bin: 'build/${arch}-${platform}/${mode}',
-        output: 'dist'
       }
     }
   }
