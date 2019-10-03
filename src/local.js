@@ -21,10 +21,10 @@ async function resolve(url, info) {
 
   const pkgConfig = require(configFile)
 
-  if (!pkgConfig.package.platform.includes(info.platform)) {
+  if (!pkgConfig.platform.includes(info.platform)) {
     throw new Error(`${pkgConfig.name} does not support ${info.platform} platform`)
   }
-  if (!pkgConfig.package.arch.includes(info.arch)) {
+  if (!pkgConfig.arch.includes(info.arch)) {
     throw new Error(`${pkgConfig.name} does not support ${info.arch} CPU architecture`)
   }
   return {
