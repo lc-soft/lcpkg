@@ -50,23 +50,23 @@ async function downloadPackage(pkg) {
   console.log(`downloading ${url}`)
   tmpFilePath = `${filePath}.download`
   return new Promise((resolve, reject) => {
-    progress(request(url)).
-    on('progress', (state) => {
-      if (!started) {
-        bar.start(state.size.total, state.size.transferred)
-        started = true
-      }
-      bar.update(state.size.transferred, {
-        speed: filesize(state.speed || 0)
+    progress(request(url))
+      .on('progress', (state) => {
+        if (!started) {
+          bar.start(state.size.total, state.size.transferred)
+          started = true
+        }
+        bar.update(state.size.transferred, {
+          speed: filesize(state.speed || 0)
+        })
       })
-    })
-    .on('error', reject)
-    .on('end', () => {
-      bar.stop()
-      fs.renameSync(tmpFilePath, filePath)
-      resolve({ file: filePath, info: pkg })
-    })
-    .pipe(fs.createWriteStream(tmpFilePath))
+      .on('error', reject)
+      .on('end', () => {
+        bar.stop()
+        fs.renameSync(tmpFilePath, filePath)
+        resolve({ file: filePath, info: pkg })
+      })
+      .pipe(fs.createWriteStream(tmpFilePath))
   })
 }
 
