@@ -207,13 +207,25 @@ async function run(args) {
 program
   .usage('[options] <pkg...>')
   .option('--static-link', 'link to static library')
-  .option('--arch <arch>', 'specify which CPU architecture package to use', (arch, defaultArch) => {
-    if (['x86', 'x64', 'arm'].indexOf(arch) < 0) {
-      console.error(`invalid arch: ${arch}`)
-      return defaultArch
+  .option('--arch <name>', 'specify which CPU architecture package to use', (name, defaultName) => {
+    if (['x86', 'x64', 'arm'].indexOf(name) < 0) {
+      console.error(`invalid arch: ${name}`)
+      return defaultName
     }
-    return arch
+    return name
   }, process.platform === 'win32' ? 'x86' : 'x64')
+
+if (process.platform === 'win32') {
+  program.option('--platform <name>', 'specify the platform', (name, defaultName) => {
+    if (['windows', 'uwp'].indexOf(name) < 0) {
+      console.error(`invalid platform: ${name}`)
+      return defaultName
+    }
+    return name
+  }, 'windows')
+}
+
+program
   .action(() => {
     lcpkg.setup(program)
     run(program.args.filter(arg => typeof arg === 'string'))
