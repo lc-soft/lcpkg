@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('fs-extra')
 const path = require('path')
 const program = require('commander')
 const archiver = require('archiver')
@@ -127,13 +127,15 @@ class Packer {
   }
 
   async run() {
+    const tasks = []
     const info = lcpkg.pkg
     const targetdir = path.join(this.output, this.target)
-    const tasks = []
 
-    if (!fs.existsSync(targetdir)) {
-      fs.mkdirSync(targetdir, { recursive: true })
+    if (fs.existsSync(targetdir)) {
+      console.log('remove old files')
+      fs.removeSync(targetdir)
     }
+    fs.mkdirSync(targetdir, { recursive: true })
     if (info.package.entry.content) {
       new PackEntry('content', info.package.entry.content, { targetdir }).build()
     }
