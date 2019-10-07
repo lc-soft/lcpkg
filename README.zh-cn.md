@@ -2,7 +2,11 @@
 
 ([English](README.md)/**中文**)
 
-一个用于管理 Windows C/C++ 项目依赖的命令行工具。
+一个用于管理 Windows C/C++ 项目依赖的命令行工具，它能够：
+
+- 从 vpckg 或 GitHub 安装依赖包
+- 记录你项目的相关信息以及依赖库信息
+- 将资源文件、头文件、库文件打包，方便其他人安装
 
 [![Screenshot](assets/lcpkg-screenshot.gif)](assets/lcpkg-screenshot.gif)
 

@@ -2,7 +2,11 @@
 
 (**English**/[中文](README.zh-cn.md))
 
-A command line tool for manage Windows C/C++ project dependencies.
+A command line tool for manage Windows C/C++ project dependencies, it is able to:
+
+- Install dependencies from [Vcpkg](https://github.com/microsoft/vcpkg) or GitHub.
+- Save information about your project and its dependencies.
+- Pack resource files, header files and library files into a package file to make your project easier to install.
 
 [![Screenshot](assets/lcpkg-screenshot.gif)](assets/lcpkg-screenshot.gif)
 
