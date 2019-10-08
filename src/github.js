@@ -52,7 +52,7 @@ async function resolve(url, info) {
     const i = asset.name.lastIndexOf(config.packageFileExt)
 
     if (asset.name.length - config.packageFileExt.length === i)  {
-      const triplet = asset.name.sbstr(0, i).split('_').pop()
+      const triplet = asset.name.substr(0, i).split('_').pop()
 
       if (triplet) {
         resolved[triplet] = asset.browser_download_url
