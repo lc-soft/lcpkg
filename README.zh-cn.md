@@ -2,7 +2,7 @@
 
 ([English](README.md)/**中文**)
 
-一个用于管理 Windows C/C++ 项目依赖的命令行工具，它能够：
+LCPkg (**LC**'s **P**ac**k**a**g**e Manager) 是一个用于管理 Windows C/C++ 项目依赖的命令行工具。它能够：
 
 - 从 vcpkg 或 GitHub 安装依赖包
 - 记录你项目的相关信息以及依赖库信息
@@ -14,7 +14,7 @@
 
 先安装依赖:
 
-- [NodeJS](https://nodejs.org/en/)
+- [Node.js](https://nodejs.org/en/)
 - [Vcpkg](https://github.com/microsoft/vcpkg)
 
 然后安装 lcpkg:
@@ -58,6 +58,21 @@
     lcpkg install github.com/yourusername/yourlib
 
 `yourlib_all.lcpkg.zip` 文件的体积通常很大，我们建议你上传除它以外的文件，这样你的用户就不会花费太多时间在下载上。
+
+## 路线图
+
+- 支持创建 deb 包
+- 支持创建 nuget 包
+- 支持创建 rpm 包
+
+## 常见问题
+
+- **Vcpkg 已经很好用了，为什么要用 LCPkg？**
+
+   从现在的情况看来，LCPkg 相当于 Vcpkg 的扩展，没什么值得一用的特色功能，对于作者而言，其主要的用途也就是方便其他开发者下载安装 [LCUI](https://github.com/lc-soft/lLCUI) 和 [LC Design](https://github.com/lc-ui/lc-design) 的二进制包，但如果你正好符合以下条件，则可以试试 LCPkg。
+    - 有需要发布给其他开发者使用的 C/C++ 库项目。
+    - 项目中用的构建工具不是 CMake，懒得花时间学习 CMake。
+    - 项目中用到了一些 JavaScript 编写的工具，已安装 Node.js 环境。
 
 ## 贡献
 

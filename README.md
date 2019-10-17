@@ -2,7 +2,7 @@
 
 (**English**/[中文](README.zh-cn.md))
 
-A command line tool for manage Windows C/C++ project dependencies, it is able to:
+LCPkg (**LC**'s **P**ac**k**a**g**e Manager) is a command line tool for manage Windows C/C++ project dependencies, it is able to:
 
 - Install dependencies from [Vcpkg](https://github.com/microsoft/vcpkg) or GitHub.
 - Save information about your project and its dependencies.
@@ -14,7 +14,7 @@ A command line tool for manage Windows C/C++ project dependencies, it is able to
 
 Prerequisites:
 
-- [NodeJS](https://nodejs.org/en/)
+- [Node.js](https://nodejs.org/en/)
 - [Vcpkg](https://github.com/microsoft/vcpkg)
 
 To get started:
@@ -58,6 +58,21 @@ If your project is an open source project and hosted on GitHub.com, you can uplo
     lcpkg install github.com/yourusername/yourlib
 
 The `yourlib_all.lcpkg.zip` file is usually large, We recommend you upload files other than it, so that users don't have to wait too long for downloading.
+
+## Roadmap
+
+- Create deb package
+- Create nuget package
+- Create rpm package
+
+## FAQ
+
+- **Vcpkg is awesome, why should I use LCPkg instead of Vcpkg?**
+
+    In the current version, LCPkg doesn't have any appealing features, For the author, its main use is help other developers to download and install the binary packages of [LCUI](https://github.com/lc-soft/lLCUI) and [LC Design](https://github.com/lc-ui/lc-design). But if you happen to meet the following conditions, you can try LCPkg.
+    - Have a C/C++ library project that you need to publish to other developers.
+    - The build tool used in the project is not CMake, and you don't want to learn CMake.
+    - Some tools written in JavaScript are used in your project, and the Node.js has already been installed.
 
 ## Contribute
 
