@@ -1,4 +1,4 @@
-const fs = require('fs')
+const fs = require('fs-extra')
 const path = require('path')
 const filesize = require('filesize')
 const request = require('request')
@@ -32,6 +32,11 @@ async function downloadPackage(pkg) {
     filePath = path.join(dirPath, fileName)
   } else if (pkg.uri.startsWith('file:')) {
     filePath = pkg.resolved.all
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`${filePath}: file does not exist`)
+    }
+  } else if (pkg.uri.startsWith('npm:')) {
+    filePath = pkg.resolved[pkg.triplet]
     if (!fs.existsSync(filePath)) {
       throw new Error(`${filePath}: file does not exist`)
     }
@@ -70,27 +75,20 @@ async function downloadPackage(pkg) {
   })
 }
 
-async function downloadPackages(packages) {
-  const items = []
-
-  for (let i = 0; i < packages.length; ++i) {
-    items.push(await downloadPackage(packages[i]))
-  }
-  do {
-    const item = items.shift()
-
-    if (!item) {
-      break
+async function download(packages) {
+  const items = await Promise.all(packages.map(downloadPackage))
+  return Promise.all(items.map((item) => {
+    const packageDir = path.join(lcpkg.env.packagesDir, item.info.name, item.info.version)
+    if (!fs.existsSync(packageDir)) {
+      fs.mkdirSync(packageDir, { recursive: true })
     }
-
-    const destPath = path.resolve(lcpkg.env.packagesdir, item.info.name, item.info.version)
-
-    console.log(`extracting ${path.basename(item.file)}`)
-    if (!fs.existsSync(destPath)) {
-      fs.mkdirSync(destPath, { recursive: true })
+    if (fs.statSync(item.file).isDirectory()) {
+      console.log(`copying ${item.file}`)
+      return fs.copy(item.file, packageDir)
     }
-    await decompress(item.file, destPath)
-  } while (1)
+    console.log(`extracting ${item.file}`)
+    return decompress(item.file, packageDir)
+  }))
 }
 
-module.exports = downloadPackages
+module.exports = download

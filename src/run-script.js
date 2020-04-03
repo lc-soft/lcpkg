@@ -5,7 +5,7 @@ function runScript(name) {
   lcpkg.load()
   if (!lcpkg.pkg.scripts || !lcpkg.pkg.scripts[name]) {
     console.error(`missing script: ${name}`)
-    return  
+    return
   }
 
   const script = lcpkg.pkg.scripts[name]
