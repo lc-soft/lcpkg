@@ -1,11 +1,11 @@
-const fs = require('fs')
+const fs = require('fs-extra')
 const path = require('path')
 const decompress = require('decompress')
 const lcpkg = require('./index')
 const config = require('./config')
 
 function validate(url) {
-  return !!path.parse(url).dir
+  return url.startsWith('npm:')
 }
 
 async function resolve(url, info) {

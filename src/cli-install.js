@@ -5,8 +5,9 @@ const program = require('commander')
 const { spawnSync } = require('child_process')
 const { renderString } = require('template-file')
 const download = require('./download')
-const github = require('./github')
-const local = require('./local')
+const githubSource = require('./github')
+const localSource = require('./local')
+const npmSource = require('./npm')
 const lcpkg = require('./index')
 
 function getPackageTriplet(pkg) {
@@ -161,11 +162,14 @@ function loadDepenecies() {
 }
 
 async function resolvePackage(url, info) {
-  if (github.validate(url)) {
-    return await github.resolve(url, info)
+  if (githubSource.validate(url)) {
+    return await githubSource.resolve(url, info)
   }
-  if (local.validate(url)) {
-    return await local.resolve(url, info)
+  if (npmSource.validate(url)) {
+    return await npmSource.resolve(url, info)
+  }
+  if (localSource.validate(url)) {
+    return await localSource.resolve(url, info)
   }
   return { name: url, version: 'latest', uri: `vcpkg:${url}` }
 }

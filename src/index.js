@@ -81,7 +81,9 @@ class LCPkg {
 
   setup(program) {
     this.arch = program.arch
-    this.platform = program.platform
+    if (program.platform) {
+      this.platform = program.platform
+    }
   }
 
   load() {

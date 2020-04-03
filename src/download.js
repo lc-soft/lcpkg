@@ -35,6 +35,11 @@ async function downloadPackage(pkg) {
     if (!fs.existsSync(filePath)) {
       throw new Error(`${filePath}: file does not exist`)
     }
+  } else if (pkg.uri.startsWith('npm:')) {
+    filePath = pkg.resolved[pkg.triplet]
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`${filePath}: file does not exist`)
+    }
   } else {
     throw new Error(`invalid URI: ${pkg.uri}`)
   }
@@ -85,11 +90,15 @@ async function downloadPackages(packages) {
 
     const destPath = path.resolve(lcpkg.env.packagesdir, item.info.name, item.info.version)
 
-    console.log(`extracting ${path.basename(item.file)}`)
-    if (!fs.existsSync(destPath)) {
-      fs.mkdirSync(destPath, { recursive: true })
+    if (fs.lstatSync(item.file).isDirectory()) {
+      console.log(`copying ${path.basename(item.file)}`)
+    } else {
+      console.log(`extracting ${path.basename(item.file)}`)
+      if (!fs.existsSync(destPath)) {
+        fs.mkdirSync(destPath, { recursive: true })
+      }
+      await decompress(item.file, destPath)
     }
-    await decompress(item.file, destPath)
   } while (1)
 }
 
