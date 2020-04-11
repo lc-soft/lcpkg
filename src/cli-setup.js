@@ -3,6 +3,7 @@ const path = require('path')
 const program = require('commander')
 const homedir = require('os').homedir()
 const { execSync } = require('child_process')
+const lcpkg = require('./index')
 
 function setup() {
   const reposDir = path.resolve(homedir, '.lcpkg', 'repos')
