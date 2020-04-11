@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
-const lcpkg = require('./index')
-const config = require('./config')
+const lcpkg = require('../index')
+const config = require('../config')
 
 function validate(url) {
   return url.startsWith('npm:')
