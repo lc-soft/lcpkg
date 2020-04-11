@@ -5,9 +5,9 @@ const program = require('commander')
 const { spawnSync } = require('child_process')
 const { renderString } = require('template-file')
 const download = require('./download')
-const githubSource = require('./github')
-const localSource = require('./local')
-const npmSource = require('./npm')
+const githubSource = require('./source/github')
+const localSource = require('./source/local')
+const npmSource = require('./source/npm')
 const lcpkg = require('./index')
 
 function getPackageTriplet(pkg) {

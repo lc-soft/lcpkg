@@ -1,5 +1,5 @@
 const axios = require('axios')
-const config = require('./config')
+const config = require('../config')
 
 async function getRelease(owner, repo, version) {
   const url = `https://api.github.com/repos/${owner}/${repo}/releases`
