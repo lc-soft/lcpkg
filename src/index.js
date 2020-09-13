@@ -79,6 +79,35 @@ class LCPkg {
     return `${this.arch}-${this.platform}`
   }
 
+  resolvePackage(pkg) {
+    let contentDir = null
+    let packageDir = null
+    let triplet = this.triplet
+    const vcpkgRoot = this.cfg.get('vcpkg.root')
+
+    if (this.platform === 'windows' && pkg.linkage === 'static') {
+      triplet += '-static'
+    }
+    if (pkg.uri.startsWith('vcpkg:')) {
+      packageDir = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${triplet}`)
+    } else {
+      packageDir = path.resolve(this.env.packagesdir, pkg.name, pkg.version)
+      contentDir = path.join(packageDir, 'content')
+      packageDir = path.resolve(packageDir, triplet)
+    }
+    return {
+      ...pkg,
+      triplet,
+      packageDir,
+      contentDir
+    }
+  }
+
+  loadPackages() {
+    const deps = this.pkg.dependencies || []
+    return Object.keys(deps).map((name) => this.resolvePackage({ name, ...deps[name] }))
+  }
+
   setup(program) {
     this.arch = program.arch
     if (program.platform) {

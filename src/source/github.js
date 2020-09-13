@@ -1,4 +1,5 @@
 const axios = require('axios')
+const path = require('path')
 const config = require('../config')
 
 async function getRelease(owner, repo, version) {
