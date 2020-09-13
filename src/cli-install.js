@@ -5,17 +5,9 @@ const program = require('commander')
 const { spawnSync } = require('child_process')
 const { renderString } = require('template-file')
 const download = require('./download')
-const githubSource = require('./source/github')
-const localSource = require('./source/local')
-const npmSource = require('./source/npm')
+const source = require('./source')
 const lcpkg = require('./index')
-
-function getPackageTriplet(pkg) {
-  if (lcpkg.platform === 'windows' && pkg.linkage === 'static') {
-    return `${lcpkg.triplet}-static`
-  }
-  return lcpkg.triplet
-}
+const { addPlatformOption, addArchOption } = require('./utils')
 
 function saveDependencies(packages) {
   const dependencies = {}
@@ -57,46 +49,35 @@ function runVcpkgInstaller(packages) {
 
 function collectInstalledPackages(packages) {
   const libs = []
-  const vcpkgRoot = lcpkg.cfg.get('vcpkg.root')
   const dest = path.join(lcpkg.env.installeddir, lcpkg.triplet)
-  const contentDest = path.join(lcpkg.env.installeddir, 'content')
+  const contentDestDir = path.join(lcpkg.env.installeddir, 'content')
 
-  if (!fs.existsSync(contentDest)) {
-    fs.mkdirSync(contentDest)
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest)
   }
-  packages.forEach((pkg) => {
-    let src
-    let contentSrc = null
+  if (!fs.existsSync(contentDestDir)) {
+    fs.mkdirSync(contentDestDir)
+  }
+  packages
+    .forEach(({ packageDir, contentDir }) => {
+      fs.readdirSync(path.join(packageDir, 'lib')).some((item) => {
+        const info = path.parse(item)
 
-    if (pkg.uri.startsWith('vcpkg:')) {
-      src = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${pkg.triplet}`)
-    } else {
-      const pkgDir = path.resolve(lcpkg.env.packagesdir, pkg.name, pkg.version)
-
-      src = path.join(pkgDir, pkg.triplet)
-      contentSrc = path.join(pkgDir, 'content')
-    }
-    if (!fs.existsSync(dest)) {
-      fs.mkdirSync(dest)
-    }
-    fs.readdirSync(path.join(src, 'lib')).some((item) => {
-      const info = path.parse(item)
-
-      if (['.a', '.lib'].includes(info.ext)) {
-        libs.push(info.name)
-        return true
+        if (['.a', '.lib'].includes(info.ext)) {
+          libs.push(info.name)
+          return true
+        }
+        return false
+      })
+      console.log(`${chalk.green('collect')} ${packageDir}`)
+      fs.copySync(packageDir, dest, { dereference: true })
+      if (contentDir && fs.existsSync(contentDir)) {
+        fs.copySync(contentDir, contentDestDir, { dereference: true })
+        console.log(`${chalk.green('collect')} ${contentDir}`)
       }
-      return false
     })
-    console.log(`${chalk.green('collect')} ${src}`)
-    fs.copySync(src, dest, { dereference: true })
-    if (contentSrc && fs.existsSync(contentSrc)) {
-      fs.copySync(contentSrc, contentDest, { dereference: true })
-      console.log(`${chalk.green('collect')} ${contentSrc}`)
-    }
-  })
-  console.log(`${chalk.green('collect')} ${contentDest}`)
-  fs.copySync(contentDest, lcpkg.env.rootdir, { dereference: true })
+  console.log(`${chalk.green('collect')} ${contentDestDir}`)
+  fs.copySync(contentDestDir, lcpkg.env.rootdir, { dereference: true })
   return libs
 }
 
@@ -125,15 +106,13 @@ function writePackageUsage(libs) {
 async function install(packages) {
   const vcpkgPackages = []
   const downloadPackages = []
-  const installedPackages = packages.map((pkg) => {
-    const info = Object.assign({}, pkg, { triplet: getPackageTriplet(pkg) })
 
+  packages.forEach((pkg) => {
     if (pkg.uri.startsWith('vcpkg:')) {
       vcpkgPackages.push(info)
     } else {
       downloadPackages.push(info)
     }
-    return info
   })
   if (vcpkgPackages.length > 0) {
     if (runVcpkgInstaller(vcpkgPackages) !== 0) {
@@ -146,92 +125,51 @@ async function install(packages) {
   }
   saveDependencies(packages)
 
-  const libs = collectInstalledPackages(installedPackages)
+  const libs = collectInstalledPackages(packages)
   const file = writePackageUsage(libs)
 
   console.log(chalk.green('\npackages are installed!\n'))
   console.log(`to find out how to use them, please see: ${file}`)
 }
 
-function loadDepenecies() {
-  lcpkg.load()
-
-  const deps = lcpkg.pkg.dependencies || []
-
-  return Object.keys(deps).map(name => Object.assign({ name }, deps[name]))
-}
-
-async function resolvePackage(url, info) {
-  if (githubSource.validate(url)) {
-    return await githubSource.resolve(url, info)
-  }
-  if (npmSource.validate(url)) {
-    return await npmSource.resolve(url, info)
-  }
-  if (localSource.validate(url)) {
-    return await localSource.resolve(url, info)
-  }
-  return { name: url, version: 'latest', uri: `vcpkg:${url}` }
-}
-
 async function run(args) {
   const dict = {}
-  const dependencies = loadDepenecies()
-  const info = {
-    linkage: program.staticLink ? 'static' : 'auto',
-    platform: lcpkg.platform,
-    arch: lcpkg.arch
-  }
-  let packages = []
+  const packages = lcpkg.loadPackages()
+  let newPackages = []
 
-  if (args.length < 1) {
-    await install(dependencies)
-    return
-  }
-  try {
-    packages = await Promise.all(args.map(arg => resolvePackage(arg, info)))
-  } catch (err) {
-    console.error(err)
-    return
-  }
-  await install(packages
-    .filter((pkg) => {
-      if (dict[pkg.name]) {
-        return false
-      }
-      dict[pkg.name] = true
-      return true
+  if (args.length > 0) {
+    newPackages = await source.resolvePackages(args, {
+      linkage: program.staticLink ? 'static' : 'auto',
+      platform: lcpkg.platform,
+      arch: lcpkg.arch
     })
-    .map(pkg => Object.assign({}, pkg, {
+  }
+  return install([
+    ...newPackages.map((pkg) => ({
+      ...pkg,
       linkage: program.staticLink ? 'static' : 'auto'
-    }))
-    .concat(dependencies.filter(pkg => !dict[pkg.name])))
+    })),
+    ...packages
+  ].filter((pkg) => {
+    if (dict[pkg.name]) {
+      return false
+    }
+    dict[pkg.name] = true
+    return true
+  }))
 }
 
 program
   .usage('[options] <pkg...>')
   .option('--static-link', 'link to static library')
-  .option('--arch <name>', 'specify which CPU architecture package to use', (name, defaultName) => {
-    if (['x86', 'x64', 'arm'].indexOf(name) < 0) {
-      console.error(`invalid arch: ${name}`)
-      return defaultName
-    }
-    return name
-  }, process.platform === 'win32' ? 'x86' : 'x64')
 
-if (process.platform === 'win32') {
-  program.option('--platform <name>', 'specify the platform', (name, defaultName) => {
-    if (['windows', 'uwp'].indexOf(name) < 0) {
-      console.error(`invalid platform: ${name}`)
-      return defaultName
-    }
-    return name
-  }, 'windows')
-}
+addArchOption(program)
+addPlatformOption(program)
 
 program
   .action(() => {
     lcpkg.setup(program)
+    lcpkg.load()
     run(program.args.filter(arg => typeof arg === 'string'))
   })
   .parse(process.argv)

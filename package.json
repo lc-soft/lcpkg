@@ -9,11 +9,15 @@
     "lcpkg-install": "./bin/cli-install",
     "lcpkg-pack": "./bin/cli-pack",
     "lcpkg-setup": "./bin/cli-setup",
+    "lcpkg-export": "./bin/cli-export",
     "lcpkg-run-script": "./bin/cli-run-script",
     "lcpkg-init": "./bin/cli-init"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@lc-soft"
   },
   "author": "Liu <root@lc-soft.io>",
   "license": "MIT",
