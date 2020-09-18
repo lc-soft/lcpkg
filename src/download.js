@@ -25,7 +25,7 @@ async function downloadPackage(pkg) {
         throw new Error(`unable to resolve package download URL for ${pkg.name}`)
       }
     }
-    dirPath = path.resolve(lcpkg.env.downloadsdir, 'github.com', pkg.uri.substr(7).split('/')[0])
+    dirPath = path.resolve(lcpkg.env.downloadsDir, 'github.com', pkg.uri.substr(7).split('/')[0])
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true })
     }

@@ -2,6 +2,8 @@ const fs = require('fs')
 const path = require('path')
 const Conf = require('conf')
 const config = require('./config')
+const { homedir } = require('os')
+const { name } = require('../package.json')
 
 const schema = {
 	vcpkg: {
@@ -15,11 +17,11 @@ const schema = {
 }
 
 function resolve() {
-  let workdir = process.cwd()
+  let workDir = process.cwd()
 
   do {
-    const info = path.parse(workdir)
-    const file = path.join(workdir, config.configFileName)
+    const info = path.parse(workDir)
+    const file = path.join(workDir, config.configFileName)
 
     if (fs.existsSync(file)) {
       return file
@@ -27,7 +29,7 @@ function resolve() {
     if (info.dir === info.root) {
       break
     }
-    workdir = info.dir
+    workDir = info.dir
   } while (1)
   throw new Error(`${config.configFileName} file is not found`)
 }
@@ -54,15 +56,19 @@ function mkdir(dirpath) {
 class Environment {
   constructor(file) {
     this.file = file
-    this.rootdir = path.dirname(file)
-    this.workdir = path.join(this.rootdir, 'lcpkg')
-    this.portsdir = path.join(this.workdir, 'ports')
-    this.packagesdir = path.join(this.workdir, 'packages')
-    this.downloadsdir = path.join(this.workdir, 'downloads')
-    this.installeddir = path.join(this.workdir, 'installed')
-    mkdir(this.workdir)
-    mkdir(this.portsdir)
-    mkdir(this.installeddir)
+    this.projectDir = path.dirname(file)
+    this.projectWorkDir = path.join(this.projectDir, 'lcpkg')
+    this.projectPortsDir = path.join(this.projectWorkDir, 'ports')
+    this.projectInstalledDir = path.join(this.projectWorkDir, 'installed')
+    this.rootDir = path.join(homedir(), `.${name}`)
+    this.packagesDir = path.join(this.rootDir, 'packages')
+    this.downloadsDir = path.join(this.rootDir, 'downloads')
+    mkdir(this.rootDir)
+    mkdir(this.packagesDir)
+    mkdir(this.downloadsDir)
+    mkdir(this.projectWorkDir)
+    mkdir(this.projectPortsDir)
+    mkdir(this.projectInstalledDir)
   }
 }
 
@@ -91,7 +97,7 @@ class LCPkg {
     if (pkg.uri.startsWith('vcpkg:')) {
       packageDir = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${triplet}`)
     } else {
-      packageDir = path.resolve(this.env.packagesdir, pkg.name, pkg.version)
+      packageDir = path.resolve(this.env.packagesDir, pkg.name, pkg.version)
       contentDir = path.join(packageDir, 'content')
       packageDir = path.resolve(packageDir, triplet)
     }

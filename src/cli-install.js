@@ -33,7 +33,7 @@ function runVcpkgInstaller(packages) {
 
   const file = path.join(vcpkgRoot, 'vcpkg')
   const params = [
-    `--overlay-ports=${lcpkg.env.portsdir}`,
+    `--overlay-ports=${lcpkg.env.projectPortsDir}`,
     '--vcpkg-root',
     vcpkgRoot,
     'install',
@@ -49,8 +49,8 @@ function runVcpkgInstaller(packages) {
 
 function collectInstalledPackages(packages) {
   const libs = []
-  const dest = path.join(lcpkg.env.installeddir, lcpkg.triplet)
-  const contentDestDir = path.join(lcpkg.env.installeddir, 'content')
+  const dest = path.join(lcpkg.env.projectInstalledDir, lcpkg.triplet)
+  const contentDestDir = path.join(lcpkg.env.projectInstalledDir, 'content')
 
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest)
@@ -69,22 +69,21 @@ function collectInstalledPackages(packages) {
         }
         return false
       })
-      console.log(`${chalk.green('collect')} ${packageDir}`)
+      console.log(`collecting ${packageDir}`)
       fs.copySync(packageDir, dest, { dereference: true })
       if (contentDir && fs.existsSync(contentDir)) {
         fs.copySync(contentDir, contentDestDir, { dereference: true })
-        console.log(`${chalk.green('collect')} ${contentDir}`)
+        console.log(`collecting ${contentDir}`)
       }
     })
-  console.log(`${chalk.green('collect')} ${contentDestDir}`)
-  fs.copySync(contentDestDir, lcpkg.env.rootdir, { dereference: true })
+  fs.copySync(contentDestDir, lcpkg.env.projectDir, { dereference: true })
   return libs
 }
 
 function writePackageUsage(libs) {
   const infile = path.join(__dirname, 'USAGE.md')
-  const outfile = path.join(lcpkg.env.workdir, 'USAGE.md')
-  const instdir = path.relative(lcpkg.env.rootdir, lcpkg.env.installeddir)
+  const outfile = path.join(lcpkg.env.projectWorkDir, 'USAGE.md')
+  const instdir = path.relative(lcpkg.env.projectDir, lcpkg.env.projectInstalledDir)
   const linuxInstdir = path.join(instdir, `${program.arch}-linux`)
   const winInstdir = path.join(instdir, '$(PlatformTarget)-windows')
   const ldflags = libs.map(lib => `-l${lib.startsWith('lib') ? lib.substr(3) : lib}`).join(' ')
@@ -109,9 +108,9 @@ async function install(packages) {
 
   packages.forEach((pkg) => {
     if (pkg.uri.startsWith('vcpkg:')) {
-      vcpkgPackages.push(info)
+      vcpkgPackages.push(pkg)
     } else {
-      downloadPackages.push(info)
+      downloadPackages.push(pkg)
     }
   })
   if (vcpkgPackages.length > 0) {

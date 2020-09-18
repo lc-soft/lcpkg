@@ -10,7 +10,7 @@ function validate(url) {
 
 async function resolve(url, info) {
   const fullPath = path.resolve(url)
-  const destPath = path.join(lcpkg.env.downloadsdir, path.parse(url).name)
+  const destPath = path.join(lcpkg.env.downloadsDir, path.parse(url).name)
   const configFile = path.join(destPath, config.configFileName)
 
   await decompress(url, destPath, { filter: file => file.path === config.configFileName })

@@ -9,7 +9,7 @@ function validate(url) {
 
 async function resolve(url, info) {
   const name = url.substr(4)
-  const npmPkgPath = path.join(lcpkg.env.rootdir, 'node_modules', name)
+  const npmPkgPath = path.join(lcpkg.env.projectDir, 'node_modules', name)
   const resolved = {}
 
   if (!fs.existsSync(npmPkgPath)) {
