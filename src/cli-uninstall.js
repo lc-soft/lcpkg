@@ -1,28 +1,32 @@
 const path = require('path')
 const fs = require('fs-extra')
+const { format } = require('util')
 const program = require('commander')
+const plural = require('plural')
 const lcpkg = require('./index')
 
 function removePackage(name, version) {
+  const packages = []
   const pkgDir = path.resolve(lcpkg.env.packagesDir, name)
+
   if (!fs.existsSync(pkgDir)) {
-    console.error(`${name} is not installed`)
-    return
+    console.warn(`${name} is not installed`)
+    return packages
   }
   if (version) {
     const versionDir = path.join(pkgDir, version)
     if (fs.existsSync(versionDir)) {
-      fs.removeSync(versionDir);
+      fs.removeSync(versionDir)
       packages.push(`${name}@${version}`)
     } else {
       console.warn(`${name}@${version} is not installed`)
     }
-    fs.removeSync(versionDir)
-    console.log(`${name}@${version} has been removed`)
   } else {
+    packages.push(...fs.readdirSync(pkgDir).map((ver) =>
+      `${name}@${ver.startsWith('v') ? ver.substr(1) : ver}`))
     fs.removeSync(pkgDir)
-    console.log(`${name} has been removed`)
   }
+  return packages
 }
 
 program

@@ -35,6 +35,7 @@
     "git-user-email": "^0.2.2",
     "git-user-name": "^2.0.0",
     "hasha": "^5.0.0",
+    "plural": "^1.1.0",
     "progress-download": "^1.0.4",
     "prompts": "^2.1.0",
     "request": "^2.88.0",

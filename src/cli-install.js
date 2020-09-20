@@ -2,6 +2,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const chalk = require('chalk')
 const program = require('commander')
+const { format } = require('util')
 const { spawnSync } = require('child_process')
 const { renderString } = require('template-file')
 const download = require('./download')
@@ -59,16 +60,22 @@ function collectInstalledPackages(packages) {
     fs.mkdirSync(contentDestDir)
   }
   packages
-    .forEach(({ packageDir, contentDir }) => {
-      fs.readdirSync(path.join(packageDir, 'lib')).some((item) => {
-        const info = path.parse(item)
+    .forEach((pkg) => {
+      const { packageDir, contentDir } = pkg
+      const libDir = path.join(packageDir, 'lib')
+      if (fs.existsSync(libDir) && fs.statSync(libDir).isDirectory()) {
+        fs.readdirSync(libDir).some((item) => {
+          const info = path.parse(item)
 
-        if (['.a', '.lib'].includes(info.ext)) {
-          libs.push(info.name)
-          return true
-        }
-        return false
-      })
+          if (['.a', '.lib'].includes(info.ext)) {
+            libs.push(info.name)
+            return true
+          }
+          return false
+        })
+      } else {
+        console.warn(`${pkg.name}@${pkg.version} is missing the lib directory`)
+      }
       console.log(`collecting ${packageDir}`)
       fs.copySync(packageDir, dest, { dereference: true })
       if (contentDir && fs.existsSync(contentDir)) {
@@ -109,7 +116,7 @@ async function install(packages) {
   packages.forEach((pkg) => {
     if (pkg.uri.startsWith('vcpkg:')) {
       vcpkgPackages.push(pkg)
-    } else {
+    } else if (!fs.existsSync(pkg.packageDir)) {
       downloadPackages.push(pkg)
     }
   })
@@ -123,17 +130,13 @@ async function install(packages) {
     await download(downloadPackages)
   }
   saveDependencies(packages)
-
-  const libs = collectInstalledPackages(packages)
-  const file = writePackageUsage(libs)
-
-  console.log(chalk.green('\npackages are installed!\n'))
-  console.log(`to find out how to use them, please see: ${file}`)
+  return { addedPackages: downloadPackages, vcpkgPackages }
 }
 
 async function run(args) {
   const dict = {}
   const packages = lcpkg.loadPackages()
+  const startTime = Date.now()
   let newPackages = []
 
   if (args.length > 0) {
@@ -143,7 +146,8 @@ async function run(args) {
       arch: lcpkg.arch
     })
   }
-  return install([
+
+  const { addedPackages } = await install([
     ...newPackages.map((pkg) => ({
       ...pkg,
       linkage: program.staticLink ? 'static' : 'auto'
@@ -156,6 +160,18 @@ async function run(args) {
     dict[pkg.name] = true
     return true
   }))
+
+  const libs = collectInstalledPackages(packages)
+  const file = writePackageUsage(libs)
+
+  console.log(addedPackages.map(({ name, version, triplet }) =>
+    `+ ${name}@${version}:${triplet}`).join('\n'))
+  console.log(format(
+    'added %d packages in %ds',
+    addedPackages.length,
+    (Date.now() - startTime) / 1000
+  ))
+  console.log(`to find out how to use them, please see:\n${file}`)
 }
 
 program

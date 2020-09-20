@@ -139,7 +139,7 @@ class LCPkg {
   }
 
   save() {
-    fs.writeFileSync(this.env.file, JSON.stringify(this.pkg, null, 2))
+    fs.writeFileSync(this.project.file, JSON.stringify(this.pkg, null, 2))
   }
 }
 
