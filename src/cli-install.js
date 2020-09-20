@@ -35,6 +35,7 @@ function runVcpkgInstaller(packages) {
   const file = path.join(vcpkgRoot, 'vcpkg')
   const params = [
     `--overlay-ports=${lcpkg.project.portsDir}`,
+    '--recurse',
     '--vcpkg-root',
     vcpkgRoot,
     'install',
@@ -122,7 +123,7 @@ async function install(packages) {
   })
   if (vcpkgPackages.length > 0) {
     if (runVcpkgInstaller(vcpkgPackages) !== 0) {
-      console.error('vcpkg is not working correctly, installation has been terminated.')
+      throw new Error('vcpkg is not working correctly, installation has been terminated.')
       return
     }
   }
@@ -135,32 +136,32 @@ async function install(packages) {
 
 async function run(args) {
   const dict = {}
-  const packages = lcpkg.loadPackages()
   const startTime = Date.now()
-  let newPackages = []
+  let packages = lcpkg.loadPackages()
 
   if (args.length > 0) {
-    newPackages = await source.resolvePackages(args, {
-      linkage: program.staticLink ? 'static' : 'auto',
-      platform: lcpkg.platform,
-      arch: lcpkg.arch
-    })
+    packages = [
+      ...(await source.resolvePackages(args, {
+        linkage: program.staticLink ? 'static' : 'auto',
+        platform: lcpkg.platform,
+        arch: lcpkg.arch
+      })).map((pkg) => ({
+        ...pkg,
+        linkage: program.staticLink ? 'static' : 'auto'
+      })),
+      ...packages
+    ]
   }
 
-  const { addedPackages } = await install([
-    ...newPackages.map((pkg) => ({
-      ...pkg,
-      linkage: program.staticLink ? 'static' : 'auto'
-    })),
-    ...packages
-  ].filter((pkg) => {
-    if (dict[pkg.name]) {
+  packages = packages.filter((pkg) => {
+    if (!pkg || dict[pkg.name]) {
       return false
     }
     dict[pkg.name] = true
     return true
-  }))
+  }).map((pkg) => lcpkg.resolvePackage(pkg))
 
+  const { addedPackages } = await install(packages)
   const libs = collectInstalledPackages(packages)
   const file = writePackageUsage(libs)
 
@@ -171,7 +172,7 @@ async function run(args) {
     addedPackages.length,
     (Date.now() - startTime) / 1000
   ))
-  console.log(`to find out how to use them, please see:\n${file}`)
+  console.log(`to find out how to use them, please see: ${file}`)
 }
 
 program

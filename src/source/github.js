@@ -11,25 +11,18 @@ async function getRelease(owner, repo, version) {
       return (await axios.get(`${url}/latest`)).data
     } catch (err) {
       if (err.response.status !== 404) {
-        throw new Error(`cannot fetch release info, message: ${err.response.data.message}`)
+        throw err
       }
     }
-    try {
-      return (await axios.get(url)).data[0]
-    } catch (err) {
-      throw new Error(`cannot fetch release info, message: ${err.response.data.message}`)
-    }
+    console.log(`try to get the last version in ${url}`)
+    return (await axios.get(url)).data[0]
   }
 
   if (!version) {
-    return await getLatest()
+    return getLatest()
   }
   console.log(`fetching ${url}/tags/v${version}`)
-  try {
-    return await axios.get(`${url}/tags/v${version}`).then(resolve)
-  } catch (_err) {
-    return await getLatest()
-  }
+  return (await axios.get(`${url}/tags/v${version}`)).data
 }
 
 function validate(url) {
@@ -41,14 +34,18 @@ async function resolve(url, info) {
   const prefixIndex = url.indexOf(prefix)
   const splitIndex = prefixIndex === 0 ? prefixIndex + prefix.length : 0
   const [owner, repo] = url.substr(splitIndex).split('/')
+  const resolved = {}
+  let release
 
   if (!owner || !repo) {
     throw new Error(`invalid github repository url: ${url}`)
   }
 
-  const resolved = {}
-  const release = await getRelease(owner, repo, info.version)
-
+  try {
+    release = await getRelease(owner, repo, info.version)
+  } catch (err) {
+    throw new Error(`cannot fetch release info, message: ${err.message}`)
+  }
   release.assets.forEach((asset) => {
     const i = asset.name.lastIndexOf(config.packageFileExt)
 
