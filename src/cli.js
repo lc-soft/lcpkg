@@ -9,5 +9,6 @@ program
   .command('run-script', 'run arbitrary package scripts').alias('run')
   .command('setup', 'setup lcpkg to make it work properly')
   .command('export', 'export dependent files')
+  .command('link', 'symlink a package folder')
   .command('config', 'operate configuration')
   .parse(process.argv)

@@ -123,7 +123,7 @@ class Packer {
   constructor() {
     lcpkg.load()
     this.target = `${lcpkg.pkg.name}-${lcpkg.pkg.version}`
-    this.output = lcpkg.pkg.package.output || path.join(lcpkg.env.projectWorkDir, 'dist')
+    this.output = lcpkg.env.projectPackageOutputDir
   }
 
   async run() {

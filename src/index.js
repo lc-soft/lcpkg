@@ -60,6 +60,7 @@ class Environment {
     this.projectWorkDir = path.join(this.projectDir, 'lcpkg')
     this.projectPortsDir = path.join(this.projectWorkDir, 'ports')
     this.projectInstalledDir = path.join(this.projectWorkDir, 'installed')
+    this.projectPackageOutputDir = path.join(this.projectWorkDir, 'dist')
     this.rootDir = path.join(homedir(), `.${name}`)
     this.packagesDir = path.join(this.rootDir, 'packages')
     this.downloadsDir = path.join(this.rootDir, 'downloads')
@@ -69,6 +70,7 @@ class Environment {
     mkdir(this.projectWorkDir)
     mkdir(this.projectPortsDir)
     mkdir(this.projectInstalledDir)
+    mkdir(this.projectPackageOutputDir)
   }
 }
 
@@ -76,7 +78,7 @@ class LCPkg {
   constructor() {
     this.cfg = new Conf({ projectName: 'lcpkg', schema })
     this.env = null
-    this.pkg = null
+    this.pkg = { name: 'unknown', version: 'unknown' }
     this.arch = 'x86'
     this.platform = process.platform === 'win32' ? 'windows' : process.platform
   }
@@ -126,6 +128,9 @@ class LCPkg {
 
     this.env = new Environment(file)
     this.pkg = load(file)
+    if (this.pkg.package.output) {
+      this.env.projectPackageOutputDir = this.pkg.package.output
+    }
   }
 
   save() {
