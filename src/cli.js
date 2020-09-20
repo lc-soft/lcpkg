@@ -10,5 +10,6 @@ program
   .command('setup', 'setup lcpkg to make it work properly')
   .command('export', 'export dependent files')
   .command('link', 'symlink a package folder')
+  .command('uninstall', 'remove a package').alias('unlink')
   .command('config', 'operate configuration')
   .parse(process.argv)

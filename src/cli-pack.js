@@ -20,7 +20,7 @@ class PackEntry {
   }
 
   get input() {
-    return this.replaceVaribales(path.resolve(path.join(lcpkg.env.projectDir, this.data.input)))
+    return this.replaceVaribales(path.resolve(path.join(lcpkg.project.baseDir, this.data.input)))
   }
 
   get triplet() {
@@ -91,7 +91,7 @@ class PackEntry {
       }
       if (this.testFile(srcPath)) {
         if (program.verbose) {
-          console.log(`copy ${path.relative(lcpkg.env.projectDir, srcPath)} -> ${destPath}`)
+          console.log(`copy ${path.relative(lcpkg.project.baseDir, srcPath)} -> ${destPath}`)
         }
         fs.copyFileSync(srcPath, destPath)
       }
@@ -123,7 +123,7 @@ class Packer {
   constructor() {
     lcpkg.load()
     this.target = `${lcpkg.pkg.name}-${lcpkg.pkg.version}`
-    this.output = lcpkg.env.projectPackageOutputDir
+    this.output = lcpkg.project.packageOutputDir
   }
 
   async run() {
@@ -175,7 +175,7 @@ class Packer {
       output.on('close', resolve)
       archive.on('error', reject)
       archive.pipe(output)
-      archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
+      archive.file(lcpkg.project.file, { name: path.basename(lcpkg.project.file) })
       archive.directory(path.join(this.output, this.target, triplet), triplet)
       if (fs.existsSync(contentPath)) {
         archive.directory(contentPath, 'content')
@@ -194,7 +194,7 @@ class Packer {
       output.on('close', resolve)
       archive.on('error', reject)
       archive.pipe(output)
-      archive.file(lcpkg.env.file, { name: path.basename(lcpkg.env.file) })
+      archive.file(lcpkg.project.file, { name: path.basename(lcpkg.project.file) })
       archive.directory(path.join(this.output, this.target), false)
       archive.finalize()
     })

@@ -5,7 +5,8 @@ const lcpkg = require('./index')
 
 function linkPackage() {
   const { name, version } = lcpkg.pkg
-  const { packagesDir, projectPackageOutputDir: outputDir } = lcpkg.env
+  const { packagesDir } = lcpkg.env
+  const { packageOutputDir: outputDir } = lcpkg.project
   const pkgDir = path.resolve(packagesDir, name)
   const linkDir = path.join(pkgDir, version)
   const targetDir = path.resolve(outputDir, `${name}-${version}`)

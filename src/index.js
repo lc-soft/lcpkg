@@ -53,31 +53,37 @@ function mkdir(dirpath) {
   return true
 }
 
-class Environment {
-  constructor(file) {
-    this.file = file
-    this.projectDir = path.dirname(file)
-    this.projectWorkDir = path.join(this.projectDir, 'lcpkg')
-    this.projectPortsDir = path.join(this.projectWorkDir, 'ports')
-    this.projectInstalledDir = path.join(this.projectWorkDir, 'installed')
-    this.projectPackageOutputDir = path.join(this.projectWorkDir, 'dist')
+class LCpkgEnvironment {
+  constructor() {
     this.rootDir = path.join(homedir(), `.${name}`)
     this.packagesDir = path.join(this.rootDir, 'packages')
     this.downloadsDir = path.join(this.rootDir, 'downloads')
     mkdir(this.rootDir)
     mkdir(this.packagesDir)
     mkdir(this.downloadsDir)
-    mkdir(this.projectWorkDir)
-    mkdir(this.projectPortsDir)
-    mkdir(this.projectInstalledDir)
-    mkdir(this.projectPackageOutputDir)
+  }
+}
+
+class LCpkgProjectEnvironment {
+  constructor(file) {
+    this.file = file
+    this.baseDir = path.dirname(file)
+    this.workDir = path.join(this.baseDir, 'lcpkg')
+    this.portsDir = path.join(this.workDir, 'ports')
+    this.installedDir = path.join(this.workDir, 'installed')
+    this.packageOutputDir = path.join(this.workDir, 'dist')
+    mkdir(this.workDir)
+    mkdir(this.portsDir)
+    mkdir(this.installedDir)
+    mkdir(this.packageOutputDir)
   }
 }
 
 class LCPkg {
   constructor() {
     this.cfg = new Conf({ projectName: 'lcpkg', schema })
-    this.env = null
+    this.env = new LCpkgEnvironment()
+    this.project = null
     this.pkg = { name: 'unknown', version: 'unknown' }
     this.arch = 'x86'
     this.platform = process.platform === 'win32' ? 'windows' : process.platform
@@ -125,11 +131,10 @@ class LCPkg {
 
   load() {
     const file = resolve()
-
-    this.env = new Environment(file)
+    this.project = new LCpkgProjectEnvironment(file)
     this.pkg = load(file)
-    if (this.pkg.package.output) {
-      this.env.projectPackageOutputDir = this.pkg.package.output
+    if (this.pkg.package && this.pkg.package.output) {
+      this.env.packageOutputDir = this.pkg.package.output
     }
   }
 

@@ -33,7 +33,7 @@ function runVcpkgInstaller(packages) {
 
   const file = path.join(vcpkgRoot, 'vcpkg')
   const params = [
-    `--overlay-ports=${lcpkg.env.projectPortsDir}`,
+    `--overlay-ports=${lcpkg.project.portsDir}`,
     '--vcpkg-root',
     vcpkgRoot,
     'install',
@@ -49,8 +49,8 @@ function runVcpkgInstaller(packages) {
 
 function collectInstalledPackages(packages) {
   const libs = []
-  const dest = path.join(lcpkg.env.projectInstalledDir, lcpkg.triplet)
-  const contentDestDir = path.join(lcpkg.env.projectInstalledDir, 'content')
+  const dest = path.join(lcpkg.project.installedDir, lcpkg.triplet)
+  const contentDestDir = path.join(lcpkg.project.installedDir, 'content')
 
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest)
@@ -76,14 +76,14 @@ function collectInstalledPackages(packages) {
         console.log(`collecting ${contentDir}`)
       }
     })
-  fs.copySync(contentDestDir, lcpkg.env.projectDir, { dereference: true })
+  fs.copySync(contentDestDir, lcpkg.project.baseDir, { dereference: true })
   return libs
 }
 
 function writePackageUsage(libs) {
   const infile = path.join(__dirname, 'USAGE.md')
-  const outfile = path.join(lcpkg.env.projectWorkDir, 'USAGE.md')
-  const instdir = path.relative(lcpkg.env.projectDir, lcpkg.env.projectInstalledDir)
+  const outfile = path.join(lcpkg.project.workDir, 'USAGE.md')
+  const instdir = path.relative(lcpkg.project.baseDir, lcpkg.project.installedDir)
   const linuxInstdir = path.join(instdir, `${program.arch}-linux`)
   const winInstdir = path.join(instdir, '$(PlatformTarget)-windows')
   const ldflags = libs.map(lib => `-l${lib.startsWith('lib') ? lib.substr(3) : lib}`).join(' ')
