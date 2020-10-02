@@ -2,6 +2,7 @@ const path = require('path')
 const fs = require('fs-extra')
 const chalk = require('chalk')
 const program = require('commander')
+const decompress = require('decompress')
 const { format } = require('util')
 const { spawnSync } = require('child_process')
 const { renderString } = require('template-file')
@@ -9,7 +10,6 @@ const { addPlatformOption, addArchOption } = require('./utils')
 const { downloadBinaryPackages, downloadSourcePackages } = require('./download')
 const source = require('./source')
 const lcpkg = require('./index')
-const decompress = require('decompress')
 
 function saveDependencies(packages) {
   const dependencies = {}
@@ -109,7 +109,7 @@ async function collectInstalledPackages(packages) {
         if (fs.existsSync(packageSourceDir)) {
           fs.removeSync(packageSourceDir)
         }
-        fs.moveSync(path.join(sourceDestDir, rootDir), packageSourceDir)
+        fs.moveSync(path.resolve(sourceDestDir, rootDir), packageSourceDir)
         return
       }
       files.forEach((file) => fs.moveSync(
