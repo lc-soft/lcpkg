@@ -1,8 +1,8 @@
 const fs = require('fs')
 const path = require('path')
 const Conf = require('conf')
-const config = require('./config')
 const { homedir } = require('os')
+const config = require('./config')
 const { name } = require('../package.json')
 
 const schema = {
@@ -93,33 +93,40 @@ class LCPkg {
     return `${this.arch}-${this.platform}`
   }
 
-  resolvePackage(pkg) {
+  resolvePackage({ name, version, uri, linkage, ...pkg }) {
     let contentDir = null
     let packageDir = null
     let sourcePath = null
     let { triplet } = this
     const vcpkgRoot = this.cfg.get('vcpkg.root')
 
-    if (this.platform === 'windows' && pkg.linkage === 'static') {
+    if (version.startsWith('v')) {
+      version = version.substr(1)
+    }
+    if (this.platform === 'windows' && linkage === 'static') {
       triplet += '-static'
     }
-    if (pkg.uri.startsWith('vcpkg:')) {
-      packageDir = path.resolve(vcpkgRoot, 'packages', `${pkg.name}_${triplet}`)
+    if (uri.startsWith('vcpkg:')) {
+      packageDir = path.resolve(vcpkgRoot, 'packages', `${name}_${triplet}`)
     } else {
-      packageDir = path.resolve(this.env.packagesDir, pkg.name, pkg.version)
+      packageDir = path.resolve(this.env.packagesDir, name, version)
       contentDir = path.join(packageDir, 'content')
       packageDir = path.resolve(packageDir, triplet)
-      if (pkg.uri.startsWith('github:')) {
+      if (uri.startsWith('github:')) {
         sourcePath = path.resolve(
           lcpkg.env.downloadsDir,
           'github.com',
-          pkg.uri.substr(7).split('/')[0],
-          `${pkg.name}-${pkg.version}_source.zip`
+          uri.substr(7).split('/')[0],
+          `${name}-${version}_source.zip`
         )
       }
     }
     return {
       ...pkg,
+      name,
+      version,
+      uri,
+      linkage,
       triplet,
       sourcePath,
       packageDir,

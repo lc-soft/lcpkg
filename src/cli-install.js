@@ -99,6 +99,10 @@ async function collectInstalledPackages(packages) {
   await Promise.all(sourcePackages.map((pkg) => {
     console.log(`extracting ${pkg.sourcePath}`)
     return decompress(pkg.sourcePath, sourceDestDir).then((files) => {
+      if (files.length < 1) {
+        console.error(`extraction failed: ${pkg.sourcePath}`)
+        return
+      }
       const rootDir = files[0].path
       const packageSourceDir = path.join(sourceDestDir, pkg.name)
       if (files[0].type === 'directory' && files.every((file) => file.path.startsWith(rootDir))) {

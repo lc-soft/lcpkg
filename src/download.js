@@ -32,6 +32,7 @@ function download(url, filePath) {
       })
       .on('error', reject)
       .on('end', () => {
+        bar.update(bar.getTotal())
         bar.stop()
         fs.renameSync(tmpFilePath, filePath)
         resolve(filePath)
@@ -94,20 +95,20 @@ async function downloadBinaryPackages(packages) {
   }))
 }
 
-async function downloadSourcePackage(pkg) {
-  if (!pkg.uri.startsWith('github:')) {
-    console.log(`${pkg.name} is not a package from GitHub, its source package download has been ignored`)
+async function downloadSourcePackage({ name, version, uri, sourcePath }) {
+  if (!uri.startsWith('github:')) {
+    console.log(`${name} is not a package from GitHub, its source package download has been ignored`)
     return null
   }
 
-  const repoPath = pkg.uri.substr(7)
-  const dirPath = path.dirname(pkg.sourcePath)
-  const url = `https://github.com/${repoPath}/archive/${pkg.version}.zip`
+  const repoPath = uri.substr(7)
+  const dirPath = path.dirname(sourcePath)
+  const url = `https://github.com/${repoPath}/archive/${version.startsWith('v') ? version : `v${version}`}.zip`
 
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true })
   }
-  return download(url, pkg.sourcePath)
+  return download(url, sourcePath)
 }
 
 async function downloadSourcePackages(packages) {

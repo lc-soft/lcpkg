@@ -1,9 +1,9 @@
 const axios = require('axios')
-const path = require('path')
 const config = require('../config')
 
 async function getRelease(owner, repo, version) {
   const url = `https://api.github.com/repos/${owner}/${repo}/releases`
+  const tagUrl = `${url}/tags/${version.startsWith('v') ? version : `v${version}`}`
 
   async function getLatest() {
     console.log(`fetching ${url}/latest`)
@@ -21,8 +21,8 @@ async function getRelease(owner, repo, version) {
   if (!version || version === 'latest') {
     return getLatest()
   }
-  console.log(`fetching ${url}/tags/v${version}`)
-  return (await axios.get(`${url}/tags/v${version}`)).data
+  console.log(`fetching ${tagUrl}`)
+  return (await axios.get(tagUrl)).data
 }
 
 function validate(url) {
@@ -60,7 +60,7 @@ async function resolve(url, info) {
   })
   return {
     name: repo,
-    version: release.tag_name,
+    version: release.tag_name.startsWith('v') ? release.tag_name.substr(1) : release.tag_name,
     uri: `github:${owner}/${repo}`,
     resolved
   }
