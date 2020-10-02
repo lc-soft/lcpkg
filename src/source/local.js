@@ -1,41 +1,43 @@
-const fs = require('fs-extra')
-const path = require('path')
-const decompress = require('decompress')
-const lcpkg = require('../index')
-const config = require('../config')
+/* eslint-disable import/no-dynamic-require */
+/* eslint-disable global-require */
+const fs = require('fs-extra');
+const path = require('path');
+const decompress = require('decompress');
+const lcpkg = require('../index');
+const config = require('../config');
 
 function validate(url) {
-  return url.startsWith('npm:')
+  return url.startsWith('npm:');
 }
 
 async function resolve(url, info) {
-  const fullPath = path.resolve(url)
-  const destPath = path.join(lcpkg.env.downloadsDir, path.parse(url).name)
-  const configFile = path.join(destPath, config.configFileName)
+  const fullPath = path.resolve(url);
+  const destPath = path.join(lcpkg.env.downloadsDir, path.parse(url).name);
+  const configFile = path.join(destPath, config.configFileName);
 
-  await decompress(url, destPath, { filter: file => file.path === config.configFileName })
+  await decompress(url, destPath, { filter: (file) => file.path === config.configFileName });
 
   if (!fs.existsSync(configFile)) {
-    throw new Error(`${url}: unable to read package information`)
+    throw new Error(`${url}: unable to read package information`);
   }
 
-  const pkgConfig = require(configFile)
+  const pkgConfig = require(configFile);
 
   if (!pkgConfig.platform.includes(info.platform)) {
-    throw new Error(`${pkgConfig.name} does not support ${info.platform} platform`)
+    throw new Error(`${pkgConfig.name} does not support ${info.platform} platform`);
   }
   if (!pkgConfig.arch.includes(info.arch)) {
-    throw new Error(`${pkgConfig.name} does not support ${info.arch} CPU architecture`)
+    throw new Error(`${pkgConfig.name} does not support ${info.arch} CPU architecture`);
   }
   return {
     name: pkgConfig.name,
     version: pkgConfig.version,
     uri: `file:${fullPath}`,
     resolved: { all: fullPath }
-  }
+  };
 }
 
 module.exports = {
   validate,
   resolve
-}
+};
