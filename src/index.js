@@ -96,7 +96,8 @@ class LCPkg {
   resolvePackage(pkg) {
     let contentDir = null
     let packageDir = null
-    let triplet = this.triplet
+    let sourcePath = null
+    let { triplet } = this
     const vcpkgRoot = this.cfg.get('vcpkg.root')
 
     if (this.platform === 'windows' && pkg.linkage === 'static') {
@@ -108,10 +109,19 @@ class LCPkg {
       packageDir = path.resolve(this.env.packagesDir, pkg.name, pkg.version)
       contentDir = path.join(packageDir, 'content')
       packageDir = path.resolve(packageDir, triplet)
+      if (pkg.uri.startsWith('github:')) {
+        sourcePath = path.resolve(
+          lcpkg.env.downloadsDir,
+          'github.com',
+          pkg.uri.substr(7).split('/')[0],
+          `${pkg.name}-${pkg.version}_source.zip`
+        )
+      }
     }
     return {
       ...pkg,
       triplet,
+      sourcePath,
       packageDir,
       contentDir
     }

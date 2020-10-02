@@ -5,18 +5,23 @@ const program = require('commander')
 const { format } = require('util')
 const { spawnSync } = require('child_process')
 const { renderString } = require('template-file')
-const download = require('./download')
+const { addPlatformOption, addArchOption } = require('./utils')
+const { downloadBinaryPackages, downloadSourcePackages } = require('./download')
 const source = require('./source')
 const lcpkg = require('./index')
-const { addPlatformOption, addArchOption } = require('./utils')
+const decompress = require('decompress')
 
 function saveDependencies(packages) {
   const dependencies = {}
 
   packages.forEach((pkg) => {
-    const dep = Object.assign({}, pkg)
+    const dep = { ...pkg }
 
     delete dep.name
+    delete dep.contentDir
+    delete dep.packageDir
+    delete dep.triplet
+    delete dep.sourcePath
     dependencies[pkg.name] = dep
   })
   lcpkg.pkg.dependencies = dependencies
@@ -49,10 +54,12 @@ function runVcpkgInstaller(packages) {
   return result.status
 }
 
-function collectInstalledPackages(packages) {
+async function collectInstalledPackages(packages) {
   const libs = []
   const dest = path.join(lcpkg.project.installedDir, lcpkg.triplet)
   const contentDestDir = path.join(lcpkg.project.installedDir, 'content')
+  const sourceDestDir = path.join(lcpkg.project.installedDir, 'source')
+  const sourcePackages = []
 
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest)
@@ -60,30 +67,53 @@ function collectInstalledPackages(packages) {
   if (!fs.existsSync(contentDestDir)) {
     fs.mkdirSync(contentDestDir)
   }
-  packages
-    .forEach((pkg) => {
-      const { packageDir, contentDir } = pkg
-      const libDir = path.join(packageDir, 'lib')
-      if (fs.existsSync(libDir) && fs.statSync(libDir).isDirectory()) {
-        fs.readdirSync(libDir).some((item) => {
-          const info = path.parse(item)
+  if (!fs.existsSync(sourceDestDir)) {
+    fs.mkdirSync(sourceDestDir)
+  }
+  packages.forEach((pkg) => {
+    const { packageDir, contentDir, sourcePath } = pkg
+    const libDir = path.join(packageDir, 'lib')
+    if (fs.existsSync(libDir) && fs.statSync(libDir).isDirectory()) {
+      fs.readdirSync(libDir).some((item) => {
+        const info = path.parse(item)
 
-          if (['.a', '.lib'].includes(info.ext)) {
-            libs.push(info.name)
-            return true
-          }
-          return false
-        })
-      } else {
-        console.warn(`${pkg.name}@${pkg.version} is missing the lib directory`)
+        if (['.a', '.lib'].includes(info.ext)) {
+          libs.push(info.name)
+          return true
+        }
+        return false
+      })
+    } else {
+      console.warn(`${pkg.name}@${pkg.version} is missing the lib directory`)
+    }
+    console.log(`collecting ${packageDir}`)
+    fs.copySync(packageDir, dest, { dereference: true })
+    if (contentDir && fs.existsSync(contentDir)) {
+      console.log(`collecting ${contentDir}`)
+      fs.copySync(contentDir, contentDestDir, { dereference: true })
+    }
+    if (pkg.sourceRequired && sourcePath && fs.existsSync(sourcePath)) {
+      sourcePackages.push(pkg)
+    }
+  })
+  await Promise.all(sourcePackages.map((pkg) => {
+    console.log(`extracting ${pkg.sourcePath}`)
+    return decompress(pkg.sourcePath, sourceDestDir).then((files) => {
+      const rootDir = files[0].path
+      const packageSourceDir = path.join(sourceDestDir, pkg.name)
+      if (files[0].type === 'directory' && files.every((file) => file.path.startsWith(rootDir))) {
+        if (fs.existsSync(packageSourceDir)) {
+          fs.removeSync(packageSourceDir)
+        }
+        fs.moveSync(path.join(sourceDestDir, rootDir), packageSourceDir)
+        return
       }
-      console.log(`collecting ${packageDir}`)
-      fs.copySync(packageDir, dest, { dereference: true })
-      if (contentDir && fs.existsSync(contentDir)) {
-        fs.copySync(contentDir, contentDestDir, { dereference: true })
-        console.log(`collecting ${contentDir}`)
-      }
+      files.forEach((file) => fs.moveSync(
+        path.join(sourceDestDir, file.path),
+        path.join(packageSourceDir, file.path.substr(rootDir.length))
+      ))
     })
+  }))
   fs.copySync(contentDestDir, lcpkg.project.baseDir, { dereference: true })
   return libs
 }
@@ -112,26 +142,32 @@ function writePackageUsage(libs) {
 
 async function install(packages) {
   const vcpkgPackages = []
-  const downloadPackages = []
+  const addedPackages = []
+  const sourcePackages = []
 
   packages.forEach((pkg) => {
     if (pkg.uri.startsWith('vcpkg:')) {
       vcpkgPackages.push(pkg)
     } else if (!fs.existsSync(pkg.packageDir)) {
-      downloadPackages.push(pkg)
+      addedPackages.push(pkg)
+    }
+    if (pkg.sourceRequired) {
+      sourcePackages.push(pkg)
     }
   })
+  if (addedPackages.length > 0) {
+    await downloadBinaryPackages(addedPackages)
+  }
+  if (sourcePackages.length > 0) {
+    await downloadSourcePackages(sourcePackages)
+  }
   if (vcpkgPackages.length > 0) {
     if (runVcpkgInstaller(vcpkgPackages) !== 0) {
       throw new Error('vcpkg is not working correctly, installation has been terminated.')
-      return
     }
   }
-  if (downloadPackages.length > 0) {
-    await download(downloadPackages)
-  }
   saveDependencies(packages)
-  return { addedPackages: downloadPackages, vcpkgPackages }
+  return { addedPackages, vcpkgPackages }
 }
 
 async function run(args) {
@@ -147,7 +183,8 @@ async function run(args) {
         arch: lcpkg.arch
       })).map((pkg) => ({
         ...pkg,
-        linkage: program.staticLink ? 'static' : 'auto'
+        linkage: program.staticLink ? 'static' : 'auto',
+        sourceRequired: !!program.saveSource,
       })),
       ...packages
     ]
@@ -162,7 +199,7 @@ async function run(args) {
   }).map((pkg) => lcpkg.resolvePackage(pkg))
 
   const { addedPackages } = await install(packages)
-  const libs = collectInstalledPackages(packages)
+  const libs = await collectInstalledPackages(packages)
   const file = writePackageUsage(libs)
 
   console.log(addedPackages.map(({ name, version, triplet }) =>
@@ -178,6 +215,7 @@ async function run(args) {
 program
   .usage('[options] <pkg...>')
   .option('--static-link', 'link to static library')
+  .option('--save-source', 'download and save source code')
 
 addArchOption(program)
 addPlatformOption(program)

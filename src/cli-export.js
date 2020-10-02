@@ -11,12 +11,14 @@ function exportRuntimeFiles(destDir) {
       path.join(pkg.packageDir, 'bin')
 
     console.log(`exporting ${pkg.name}:${pkg.triplet}-${program.mode}`)
-    fs.readdirSync(binDir).some((name) => {
-      if (!['.dll', '.so', '.pdb'].includes(path.parse(name).ext)) {
-        return
-      }
-      fs.copyFileSync(path.join(binDir, name), path.join(destDir, name))
-    })
+    if (fs.existsSync(binDir) && fs.statSync(binDir).isDirectory()) {
+      fs.readdirSync(binDir).some((name) => {
+        if (!['.dll', '.so', '.pdb'].includes(path.parse(name).ext)) {
+          return
+        }
+        fs.copyFileSync(path.join(binDir, name), path.join(destDir, name))
+      })
+    }
     if (!pkg.contentDir || !fs.existsSync(pkg.contentDir)) {
       return
     }

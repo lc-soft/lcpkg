@@ -10,7 +10,7 @@ async function getRelease(owner, repo, version) {
     try {
       return (await axios.get(`${url}/latest`)).data
     } catch (err) {
-      if (err.response.status !== 404) {
+      if (err.response && err.response.status !== 404) {
         throw err
       }
     }
@@ -18,7 +18,7 @@ async function getRelease(owner, repo, version) {
     return (await axios.get(url)).data[0]
   }
 
-  if (!version) {
+  if (!version || version === 'latest') {
     return getLatest()
   }
   console.log(`fetching ${url}/tags/v${version}`)

@@ -7,7 +7,7 @@ function validate(url) {
   return url.startsWith('npm:')
 }
 
-async function resolve(url, info) {
+async function resolve(url, { platform, arch }) {
   const name = url.substr(4)
   const npmPkgPath = path.join(lcpkg.project.baseDir, 'node_modules', name)
   const resolved = {}
@@ -34,11 +34,11 @@ async function resolve(url, info) {
   if (!fs.existsSync(lcpkgOutputPath)) {
     throw new Error(`cannot resolve the lcpkg output directory: ${url}`)
   }
-  if (!pkgConfig.platform.includes(info.platform)) {
-    throw new Error(`${pkgConfig.name} does not support ${info.platform} platform`)
+  if (!pkgConfig.platform.includes(platform)) {
+    throw new Error(`${pkgConfig.name} does not support ${platform} platform`)
   }
-  if (!pkgConfig.arch.includes(info.arch)) {
-    throw new Error(`${pkgConfig.name} does not support ${info.arch} CPU architecture`)
+  if (!pkgConfig.arch.includes(arch)) {
+    throw new Error(`${pkgConfig.name} does not support ${arch} CPU architecture`)
   }
   pkgConfig.arch.forEach((arch) => {
     pkgConfig.platform.forEach((platform) => {
