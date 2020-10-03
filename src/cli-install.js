@@ -29,9 +29,9 @@ function saveDependencies(packages) {
 }
 
 function runVcpkgInstaller(packages) {
-  const vcpkgRoot = lcpkg.cfg.get('vcpkg.root');
+  const { vcpkgRoot } = lcpkg.env;
 
-  if (!vcpkgRoot) {
+  if (!vcpkgRoot || !fs.existsSync(vcpkgRoot)) {
     console.log('Please using the following command to configure the path of vcpkg root directory:\n');
     console.log('\tlcpkg config vcpkg.root path/to/vcpkg\n');
     throw new Error('vcpkg root directory was not found');

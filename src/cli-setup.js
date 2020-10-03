@@ -20,7 +20,7 @@ function setup() {
     execSync('git clone https://github.com/Microsoft/vcpkg.git', { cwd: reposDir, stdio: 'inherit' });
   }
   execSync(cmdBootstrap, { cwd: vcpkgDir, stdio: 'inherit' });
-  lcpkg.cfg.set('lcpkg.info', vcpkgDir);
+  lcpkg.cfg.set('vcpkg.root', vcpkgDir);
 }
 
 program

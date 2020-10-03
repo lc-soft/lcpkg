@@ -54,11 +54,17 @@ function mkdir(dirpath) {
   return dirpath;
 }
 
-function createEnvironment() {
+function createEnvironment(cfg) {
+  const vcpkgRoot = cfg.get('vcpkg.root');
   const rootDir = mkdir(path.join(homedir(), `.${appName}`));
   const packagesDir = mkdir(path.join(rootDir, 'packages'));
   const downloadsDir = mkdir(path.join(rootDir, 'downloads'));
-  return { rootDir, packagesDir, downloadsDir };
+  if (!vcpkgRoot || !fs.existsSync(vcpkgRoot)) {
+    console.warn('vcpkg root directory was not found');
+  }
+  return {
+    vcpkgRoot, rootDir, packagesDir, downloadsDir
+  };
 }
 
 function createProjectEnvironment(file) {
@@ -75,7 +81,7 @@ function createProjectEnvironment(file) {
 class LCPkg {
   constructor() {
     this.cfg = new Conf({ projectName: 'lcpkg', schema });
-    this.env = createEnvironment();
+    this.env = createEnvironment(this.cfg);
     this.project = null;
     this.pkg = { name: 'unknown', version: 'unknown' };
     this.arch = 'x86';
@@ -93,7 +99,7 @@ class LCPkg {
     let packageDir = null;
     let sourcePath = null;
     let { triplet } = this;
-    const vcpkgRoot = this.cfg.get('vcpkg.root');
+    const { vcpkgRoot, packagesDir } = this.env;
     const version = pkg.version.startsWith('v') ? pkg.version.substr(1) : pkg.version;
 
     if (this.platform === 'windows' && linkage === 'static') {
@@ -102,7 +108,7 @@ class LCPkg {
     if (uri.startsWith('vcpkg:')) {
       packageDir = path.resolve(vcpkgRoot, 'packages', `${name}_${triplet}`);
     } else {
-      packageDir = path.resolve(this.env.packagesDir, name, version);
+      packageDir = path.resolve(packagesDir, name, version);
       contentDir = path.join(packageDir, 'content');
       packageDir = path.resolve(packageDir, triplet);
       if (uri.startsWith('github:')) {
