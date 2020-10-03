@@ -26,6 +26,12 @@
     }
   },
   "dependencies": {
+    "stb": {
+      "version": "latest",
+      "sourceRequired": false,
+      "uri": "vcpkg:stb",
+      "linkage": "auto"
+    },
     "LCUI": {
       "version": "2.1.0",
       "resolved": {
@@ -37,12 +43,6 @@
       },
       "sourceRequired": true,
       "uri": "github:lc-soft/LCUI",
-      "linkage": "auto"
-    },
-    "libpng": {
-      "version": "latest",
-      "sourceRequired": false,
-      "uri": "vcpkg:libpng",
       "linkage": "auto"
     }
   }
