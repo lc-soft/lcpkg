@@ -17,7 +17,8 @@
   },
   "scripts": {
     "coverage": "nyc report --reporter=text-lcov | coveralls",
-    "test": "nyc mocha"
+    "test": "nyc mocha",
+    "version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/@lc-soft"
