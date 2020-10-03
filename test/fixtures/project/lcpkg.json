@@ -39,12 +39,6 @@
       "uri": "github:lc-soft/LCUI",
       "linkage": "auto"
     },
-    "zlib": {
-      "version": "latest",
-      "sourceRequired": false,
-      "uri": "vcpkg:zlib",
-      "linkage": "auto"
-    },
     "libpng": {
       "version": "latest",
       "sourceRequired": false,

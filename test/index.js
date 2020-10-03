@@ -21,7 +21,7 @@ describe('lcpkg', () => {
   describe('install', () => {
     it('should install the package recorded in lcpkg.json', function (done) {
       const binDir = 'lcpkg/installed/x86-windows/bin';
-      const expectFiles = ['LCUI.dll', 'libpng16.dll', 'zlib1.dll'];
+      const expectFiles = ['LCUI.dll', 'libpng16.dll'];
       const cwd = path.resolve(fixturesDir, 'project');
 
       this.timeout(120000);
