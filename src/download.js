@@ -38,15 +38,20 @@ class Downloader {
           if (!bar) {
             bar = this.multibar.create(state.size.total, state.size.transferred);
           }
-          bar.update(state.size.transferred, {
-            speed: filesize(state.speed || 0),
-            filename: this.getTaskName(filename)
-          });
+          // bar is undefined in the test environment
+          if (bar) {
+            bar.update(state.size.transferred, {
+              speed: filesize(state.speed || 0),
+              filename: this.getTaskName(filename)
+            });
+          }
         })
         .on('error', reject)
         .on('end', () => {
-          bar.update(bar.getTotal());
-          bar.stop();
+          if (bar) {
+            bar.update(bar.getTotal());
+            bar.stop();
+          }
           fs.renameSync(tmpFilePath, filePath);
           resolve(filePath);
         })

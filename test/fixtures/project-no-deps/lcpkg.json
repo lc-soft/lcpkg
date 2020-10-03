@@ -1,0 +1,49 @@
+{
+  "name": "project-no-deps",
+  "version": "1.0.0",
+  "description": "lcpkg test project",
+  "author": "Liu",
+  "arch": [
+    "x86",
+    "x64"
+  ],
+  "platform": [
+    "windows",
+    "uwp",
+    "linux"
+  ],
+  "mode": [
+    "debug",
+    "release"
+  ],
+  "package": {
+    "output": "lcpkg/dist",
+    "entry": {
+      "lib": "build/${arch}-${platform}/${mode}",
+      "bin": "build/${arch}-${platform}/${mode}",
+      "content": "",
+      "include": "include"
+    }
+  },
+  "dependencies": {
+    "sqlite3": {
+      "version": "latest",
+      "sourceRequired": false,
+      "uri": "vcpkg:sqlite3",
+      "linkage": "auto"
+    },
+    "LCUI": {
+      "version": "2.1.0",
+      "resolved": {
+        "x64-uwp": "https://github.com/lc-soft/LCUI/releases/download/v2.1.0/LCUI-2.1.0_x64-uwp.lcpkg.zip",
+        "all": "https://github.com/lc-soft/LCUI/releases/download/v2.1.0/liblcui2_2.1.0-1_amd64.deb.zip",
+        "x64-windows": "https://github.com/lc-soft/LCUI/releases/download/v2.1.0/LCUI-2.1.0_x64-windows.lcpkg.zip",
+        "x86-uwp": "https://github.com/lc-soft/LCUI/releases/download/v2.1.0/LCUI-2.1.0_x86-uwp.lcpkg.zip",
+        "x86-windows": "https://github.com/lc-soft/LCUI/releases/download/v2.1.0/LCUI-2.1.0_x86-windows.lcpkg.zip"
+      },
+      "sourceRequired": false,
+      "uri": "github:lc-soft/LCUI",
+      "linkage": "auto"
+    }
+  }
+}
