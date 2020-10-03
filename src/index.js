@@ -33,7 +33,7 @@ function resolve() {
     }
     workDir = info.dir;
   } while (workDir);
-  throw new Error(`${config.configFileName} file is not found`);
+  return null;
 }
 
 function load(file) {
@@ -147,10 +147,16 @@ class LCPkg {
 
   load() {
     const file = resolve();
-    this.project = createProjectEnvironment(file);
-    this.pkg = load(file);
-    if (this.pkg.package && this.pkg.package.output) {
-      this.env.packageOutputDir = this.pkg.package.output;
+
+    if (file) {
+      this.project = createProjectEnvironment(file);
+      this.pkg = load(file);
+      if (!this.pkg.dependencies) {
+        this.pkg.dependencies = {};
+      }
+      if (this.pkg.package && this.pkg.package.output) {
+        this.env.packageOutputDir = this.pkg.package.output;
+      }
     }
   }
 
