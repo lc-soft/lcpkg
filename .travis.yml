@@ -1,0 +1,10 @@
+os: windows
+language: node_js
+node_js:
+  - 12
+before_script:
+  - npm link
+  - lcpkg setup
+script:
+  - npm test
+  - npm run coverage
