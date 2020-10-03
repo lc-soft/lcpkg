@@ -5,6 +5,9 @@ node_js:
 before_script:
   - npm link
   - lcpkg setup
+  - cd test/fixtures/project
+  - lcpkg install
+  - cd ../../../
 script:
   - npm test
   - npm run coverage
