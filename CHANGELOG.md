@@ -1,3 +1,12 @@
+## [0.3.1](https://github.com/lc-soft/lcpkg/compare/v0.3.0...v0.3.1) (2020-10-19)
+
+
+### Bug Fixes
+
+* correct validation of platform option ([0fde0f6](https://github.com/lc-soft/lcpkg/commit/0fde0f6373c874e392b89278925feb0fc6456555))
+
+
+
 # [0.3.0](https://github.com/lc-soft/lcpkg/compare/v0.2.1...v0.3.0) (2020-10-06)
 
 
