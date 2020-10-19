@@ -18,7 +18,7 @@ function addPlatformOption(program) {
     return;
   }
   program.option('--platform <name>', 'specify the platform', (name, defaultName) => {
-    if (['windows', 'uwp'].includes(name)) {
+    if (!['windows', 'uwp'].includes(name)) {
       console.error(`invalid platform: ${name}`);
       return defaultName;
     }
