@@ -62,7 +62,7 @@ If your project is an application, and its working directory requires the dll fi
 
 You can also specify which CPU architecture and build mode resource files to export:
 
-    lcpkg export --filder rumtime --arch x64 --mode debug /path/to/your/app/workdir
+    lcpkg export --filter rumtime --arch x64 --mode debug /path/to/your/app/workdir
 
 ### Package C/C++ library project
 

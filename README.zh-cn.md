@@ -64,7 +64,7 @@ LCPkg (**LC**'s **P**ac**k**a**g**e Manager) 是一个用于管理 Windows C/C++
 
 也可以指定导出何种 CPU 架构和构建模式的资源文件：
 
-    lcpkg export --filder rumtime --arch x64 --mode debug /path/to/your/app/workdir
+    lcpkg export --filter rumtime --arch x64 --mode debug /path/to/your/app/workdir
 
 ### 打包 C/C++ 库项目
 
