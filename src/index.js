@@ -59,9 +59,6 @@ function createEnvironment(cfg) {
   const rootDir = mkdir(path.join(homedir(), `.${appName}`));
   const packagesDir = mkdir(path.join(rootDir, 'packages'));
   const downloadsDir = mkdir(path.join(rootDir, 'downloads'));
-  if (!vcpkgRoot || !fs.existsSync(vcpkgRoot)) {
-    console.warn('vcpkg root directory was not found');
-  }
   return {
     vcpkgRoot, rootDir, packagesDir, downloadsDir
   };
