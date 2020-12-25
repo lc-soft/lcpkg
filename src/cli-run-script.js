@@ -2,6 +2,6 @@ const program = require('commander');
 const { runScript } = require('./run-script');
 
 program
-  .usage('<script name>')
+  .arguments('<scriptName>')
   .action(runScript)
   .parse(process.argv);
