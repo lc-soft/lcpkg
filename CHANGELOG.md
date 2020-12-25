@@ -1,3 +1,13 @@
+## [0.3.2](https://github.com/lc-soft/lcpkg/compare/v0.3.1...v0.3.2) (2020-12-25)
+
+
+### Bug Fixes
+
+* missing script: [object Object] ([2e2aae9](https://github.com/lc-soft/lcpkg/commit/2e2aae941afe6741baad21a2227334c0062bec46))
+* remove vcpkg config warning ([4839413](https://github.com/lc-soft/lcpkg/commit/483941397402e1050bde7e4a4c2d7d16bc93d019))
+
+
+
 ## [0.3.1](https://github.com/lc-soft/lcpkg/compare/v0.3.0...v0.3.1) (2020-10-19)
 
 

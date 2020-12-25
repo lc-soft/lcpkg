@@ -1,6 +1,6 @@
 {
   "name": "lcpkg",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "A command line tool for manage LCUI application",
   "main": "index.js",
   "bin": {
